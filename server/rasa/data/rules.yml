@@ -10,7 +10,8 @@ version: "3.1"
 #                                   model's top intent guesses (clarification 1)
 #   2nd consecutive unclear turn -> constrained menu, utter_ask_rephrase
 #                                   (clarification 2)
-#   3rd consecutive unclear turn -> action_human_handover with full context
+#   3rd consecutive unclear turn -> consent request; context is shared only
+#                                   after the user explicitly confirms.
 # Each unclear user message is reverted (UserUtteranceReverted) so it does not
 # distort the dialogue history the policies see.
 # ============================================================================
@@ -56,6 +57,17 @@ rules:
       - intent: request_human_advisor
       - action: utter_handover_notice
       - action: action_human_handover
+
+  - rule: Record consent and send the advisor handover
+    steps:
+      - intent: confirm_handover
+      - action: action_record_handover_consent
+      - action: action_human_handover
+
+  - rule: Respect refusal of advisor handover
+    steps:
+      - intent: decline_handover
+      - action: action_record_handover_consent
 
   # --- Location (manual input or browser GPS) ------------------------------
   - rule: Set origin from typed city

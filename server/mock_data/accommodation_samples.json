@@ -1,0 +1,26 @@
+{
+  "_comment": "Clearly-labelled illustrative fallback entries for UI demonstrations when public OpenStreetMap/Overpass mirrors are unavailable. These are not verified listings, booking quotes, or sustainability certifications.",
+  "copenhagen": [
+    {
+      "name": "Harbour District Guesthouse (demo)",
+      "type": "guest_house",
+      "lat": 55.6761,
+      "lon": 12.5683,
+      "rooms": "18"
+    },
+    {
+      "name": "Central Cycle Hostel (demo)",
+      "type": "hostel",
+      "lat": 55.6811,
+      "lon": 12.5753,
+      "rooms": "28"
+    },
+    {
+      "name": "City Centre Hotel (demo)",
+      "type": "hotel",
+      "stars": "3",
+      "lat": 55.6711,
+      "lon": 12.5583
+    }
+  ]
+}

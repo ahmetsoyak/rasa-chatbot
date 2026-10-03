@@ -17,6 +17,8 @@
  * offset_info             action_carbon_offset_info
  * recommendation_summary  action_rank_recommendations (data only, not rendered)
  * handover_notice         action_human_handover
+ * date_picker             utter_ask_travel_dates (domain response; opens the
+ *                         date chips, which send "YYYY-MM-DD to YYYY-MM-DD")
  */
 
 /** Emission-severity band. Transport bands are by intensity (g CO2e per passenger-km). */
@@ -113,6 +115,8 @@ export interface TransportOptionsPayload {
   local_transit?: { counts?: Record<string, number>; radius_km?: number; source?: string };
   routes?: TransportRoute[];
   routes_note?: string;
+  /** True when the live map service could not be reached (not "no data"). */
+  unavailable?: boolean;
 }
 
 export interface Experience {

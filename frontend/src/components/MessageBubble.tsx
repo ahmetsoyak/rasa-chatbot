@@ -9,6 +9,7 @@ import { OffsetInfo } from "@/components/OffsetInfo";
 import { TransportOptions } from "@/components/TransportOptions";
 import { WeatherCard } from "@/components/WeatherCard";
 import { HandoverCard } from "@/components/HandoverCard";
+import { DatePicker } from "@/components/DatePicker";
 import {
   payloadIs,
   type CarbonScoreCardPayload,
@@ -26,6 +27,8 @@ interface MessageBubbleProps {
   message: ChatMessage;
   onButtonClick: (payload: string, title: string) => void;
   disabled: boolean;
+  /** Interactive prompts (the date picker) only work on the newest message. */
+  isLatest?: boolean;
 }
 
 /** Pick the rich component for a custom payload. Unknown types render nothing. */
@@ -49,7 +52,7 @@ function renderCustom(custom: Record<string, unknown>): ReactNode {
   return null;
 }
 
-export function MessageBubble({ message, onButtonClick, disabled }: MessageBubbleProps) {
+export function MessageBubble({ message, onButtonClick, disabled, isLatest = false }: MessageBubbleProps) {
   const isUser = message.sender === "user";
 
   if (message.sender === "system-error") {
@@ -68,6 +71,14 @@ export function MessageBubble({ message, onButtonClick, disabled }: MessageBubbl
   }
 
   if (message.companion) return null;
+  if (payloadIs(message.custom, "date_picker")) {
+    if (!isLatest) return null;
+    return (
+      <div className="w-full pl-10">
+        <DatePicker disabled={disabled} onSubmit={onButtonClick} />
+      </div>
+    );
+  }
   const customContent = message.custom ? renderCustom(message.custom) : null;
   if (!message.text && !customContent && !message.buttons?.length) return null;
 

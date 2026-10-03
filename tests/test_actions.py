@@ -36,7 +36,7 @@ def make_tracker(slots=None, latest_message=None, events=None, sender_id="test-u
         "sustainability_level": None, "origin": None, "origin_lat": None,
         "origin_lon": None, "budget_tier": None, "user_currency": None,
         "last_results": None, "carbon_score": None, "handover_requested": False,
-        "clarification_attempts": 0.0,
+        "handover_consent": False, "handover_consent_requested": False, "clarification_attempts": 0.0,
     }
     default_slots.update(slots or {})
     return Tracker(
@@ -87,6 +87,7 @@ def offline(tmp_path, monkeypatch):
 
     monkeypatch.setattr(A, "HANDOVER_LOG_PATH", str(tmp_path / "handover_log.jsonl"))
     currency._cache.clear()
+    osm._cache.clear()
     return tmp_path
 
 
@@ -376,10 +377,17 @@ class TestActionSearchAccommodations:
 
     def test_unknown_destination_offers_alternatives(self, dispatcher):
         events = self.run(dispatcher, destination="Atlantis")
-        assert events == []
+        assert events == [SlotSet("destination", None)]
         assert json_messages(dispatcher, "hotel_carousel") == []
+        assert "city or destination" in texts(dispatcher)[0]
         payloads = [b["payload"] for m in dispatcher.messages for b in m.get("buttons", [])]
-        assert "/request_human_advisor" in payloads
+        assert any(payload.startswith("/inform_destination") for payload in payloads)
+
+    def test_mistaken_word_as_destination_is_cleared_not_repeated(self, dispatcher):
+        events = self.run(dispatcher, destination="recoomend")
+        assert events == [SlotSet("destination", None)]
+        reply = texts(dispatcher)[0].lower()
+        assert "recoomend" not in reply and "where are you travelling" in reply
 
     def test_missing_destination_asks_for_it(self, dispatcher):
         assert self.run(dispatcher) == []
@@ -389,6 +397,24 @@ class TestActionSearchAccommodations:
 # ---------------------------------------------------------------------------
 # Carbon footprint action (colour-coded card)
 # ---------------------------------------------------------------------------
+
+
+class TestOverpassQuery:
+    def test_successful_response_is_reused_when_mirrors_later_time_out(self, monkeypatch):
+        calls = []
+
+        def post(url, **kwargs):
+            calls.append(url)
+            return {"elements": [{"id": 1}]} if len(calls) == 1 else None
+
+        monkeypatch.setattr(http, "post_json", post)
+        assert osm.run_query("q") == [{"id": 1}]
+        assert osm.run_query("q") == [{"id": 1}]
+        assert len(calls) == len(osm.OVERPASS_URLS)
+
+    def test_failure_is_not_cached(self):
+        assert osm.run_query("q") is None
+        assert osm._cache == {}
 
 
 class TestActionCalculateCarbonFootprint:
@@ -406,6 +432,13 @@ class TestActionCalculateCarbonFootprint:
         assert {o["band"] for o in card["options"]} >= {"green", "red"}
         assert "would cut that by" in card["summary"]
         assert slot_events(events)["carbon_score"] > 0
+
+    def test_short_flight_follow_up_is_inferred_when_entity_is_missing(self, dispatcher):
+        tracker = make_tracker(slots={"destination": "Lisbon", "origin": "Porto"},
+                               latest_message={"text": "what if I fly?", "intent": {}, "entities": []})
+        A.ActionCalculateCarbonFootprint().run(dispatcher, tracker, {})
+        [card] = json_messages(dispatcher, "carbon_card")
+        assert card["mode"] == "Short-haul flight" and card["alert"]
 
     def test_origin_equal_to_destination_is_treated_as_unknown(self, dispatcher):
         tracker = make_tracker(slots={"destination": "Lisbon", "origin": "Lisbon"})
@@ -507,6 +540,11 @@ class TestTripPlanningForm:
         tracker = make_tracker(slots={"destination": "Hamburg"},
                                latest_message={"text": "porto", "intent": {}, "entities": []})
         assert A.ActionSetDestination().run(dispatcher, tracker, {}) == [SlotSet("destination", "Porto")]
+
+    def test_set_destination_recovers_city_from_natural_sentence_and_corrects_typo(self, dispatcher):
+        tracker = make_tracker(latest_message={"text": "I would like to go Cophanagen", "intent": {}, "entities": []})
+        assert A.ActionSetDestination().run(dispatcher, tracker, {}) == [SlotSet("destination", "Copenhagen")]
+        assert "I'll use Copenhagen for 'Cophanagen'." in texts(dispatcher)
 
     def test_set_destination_clears_unrecognised_text(self, dispatcher):
         tracker = make_tracker(slots={"destination": "Hamburg"},
@@ -624,6 +662,11 @@ class TestInformationActions:
         assert "routes" not in payload
         assert any("live timetables" in t for t in texts(dispatcher))
 
+    def test_transport_marks_unreachable_map_service(self, dispatcher):
+        A.ActionSearchTransport().run(dispatcher, make_tracker(slots={"destination": "Lisbon"}), {})
+        [payload] = json_messages(dispatcher, "transport_options")
+        assert payload["unavailable"] is True
+
     def test_cultural_uses_osm_data_only(self, dispatcher, osm_lisbon):
         A.ActionSearchCulturalExperiences().run(dispatcher, make_tracker(slots={"destination": "Lisbon"}), {})
         [payload] = json_messages(dispatcher, "experience_list")
@@ -709,10 +752,9 @@ class TestActionDefaultFallback:
 
     def test_stage_three_hands_over(self, dispatcher):
         events = self.run(dispatcher, [user_event("nlu_fallback")] * 3)
-        assert SlotSet("handover_requested", True) in events
+        assert SlotSet("handover_consent_requested", True) in events
         assert SlotSet("clarification_attempts", 0) in events
-        [notice] = json_messages(dispatcher, "handover_notice")
-        assert notice["reason"] == "repeated_misunderstanding"
+        assert any("Before I share a handover" in message for message in texts(dispatcher))
 
     def test_clear_turn_resets_the_count(self, dispatcher):
         events = self.run(dispatcher, [user_event("nlu_fallback"), user_event("greet"),
@@ -729,7 +771,7 @@ class TestHumanHandover:
     slots = {"destination": "Kyoto", "travel_dates": "May", "budget": "£2000",
              "sustainability_level": "high", "origin": "Hamburg",
              "origin_lat": 53.5511, "origin_lon": 9.9937, "carbon_score": 900.0,
-             "last_results": {"transport": {"best": "Train"}}}
+             "last_results": {"transport": {"best": "Train"}}, "handover_consent": True}
 
     def events(self, n=40):
         evs = [{"event": "user", "text": '/share_location{"latitude":53.5511,"longitude":9.9937}'}]
@@ -753,6 +795,23 @@ class TestHumanHandover:
         dumped = json.dumps(pkg)
         assert "53.5511" not in dumped and "9.9937" not in dumped
         assert pkg["transcript"][0]["text"] == "[shared their location]"
+
+    def test_transcript_redacts_direct_identifiers_and_sender_id(self):
+        events = [{"event": "user", "text": "Email sam@example.com or call +49 151 23456789"}]
+        pkg = A.build_handover_package(make_tracker(slots=self.slots, events=events, sender_id="sam-123"), "user_requested")
+        dumped = json.dumps(pkg)
+        assert "sam@example.com" not in dumped and "151 23456789" not in dumped and "sam-123" not in dumped
+        assert "[email removed]" in dumped and "[phone number removed]" in dumped
+
+    def test_purge_keeps_only_records_within_retention(self, offline, monkeypatch):
+        monkeypatch.setenv("HANDOVER_RETENTION_DAYS", "30")
+        path = offline / "handover_log.jsonl"
+        path.write_text("\n".join([
+            json.dumps({"created_at": 100.0, "ticket_id": "old"}),
+            json.dumps({"created_at": 1000.0 + 371 * 86400, "ticket_id": "new"}),
+        ]) + "\n")
+        A.handover_module.purge_expired_handover_records(str(path), now=1000.0 + 400 * 86400)
+        assert [json.loads(row)["ticket_id"] for row in path.read_text().splitlines()] == ["new"]
 
     def test_empty_conversation_summary(self):
         pkg = A.build_handover_package(make_tracker(), "user_requested")

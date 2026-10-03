@@ -6,6 +6,7 @@ Start the Rasa server (:5005), action server (:5055), and Vite (:5173), then:
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 from playwright.sync_api import Page, expect, sync_playwright
@@ -77,13 +78,27 @@ def main() -> int:
 
         run_case(results, "GPS is origin and destination typo is corrected", origin_and_typo)
 
+        def date_chips() -> None:
+            expect(page.get_by_role("group", name="Suggested dates")).to_be_visible()
+            expect(page.get_by_role("button", name="Not sure yet")).to_be_visible()
+            click(page, "In X days, for Y nights")
+            page.get_by_label("Start in (days from today)").fill("4")
+            click(page, "5 nights")
+            preview = page.get_by_role("group", name="Choose travel dates").get_by_role("status")
+            expect(preview).to_contain_text("· 5 nights")
+            summary = preview.inner_text()
+            click(page, "Use these dates")
+            expect(page.get_by_text(summary).last).to_be_visible()
+            expect(page.get_by_role("group", name="Choose travel dates")).to_have_count(0)
+
+        run_case(results, "Date chips turn 'in 4 days for 5 nights' into a date range", date_chips)
+
         def complete_trip() -> None:
-            say(page, "2026-10-10 to 2026-10-14")
             say(page, "£1200")
             click(page, "Lowest carbon (80% carbon)")
             expect(page.get_by_role("group", name="Advisor: places to stay in Copenhagen")).to_be_visible(timeout=45_000)
             expect(page.get_by_text("All options, lowest first")).to_be_visible()
-            expect(page.get_by_text("Getting around Copenhagen:")).to_be_visible()
+            expect(page.get_by_text(re.compile(r"Getting around Copenhagen|couldn't get live local transit data for Copenhagen")).first).to_be_visible()
 
         run_case(results, "Complete trip returns live recommendation cards", complete_trip)
         page.screenshot(path=str(output / "01_trip-results.png"), full_page=False)
@@ -92,16 +107,18 @@ def main() -> int:
             say(page, "what if I fly")
             expect(page.get_by_text("High-emission option")).to_be_visible()
             page.get_by_role("button", name="What do these numbers mean?").last.click()
-            expect(page.get_by_text("kg CO2e = kilograms of carbon-dioxide equivalent")).to_be_visible()
+            expect(page.get_by_text("kg CO2e = kilograms of carbon-dioxide equivalent").last).to_be_visible()
 
         run_case(results, "Flight alert and carbon explanation", flight_alert)
 
         def handover_card() -> None:
             click(page, "Talk to a human advisor")
+            expect(page.get_by_text("Before I share a handover")).to_be_visible()
+            click(page, "Yes, share my trip details")
             expect(page.get_by_text("Handover package prepared")).to_be_visible()
             expect(page.get_by_text("Reference:")).to_be_visible()
             page.get_by_text("View advisor handover details").click()
-            expect(page.get_by_text("GPS coordinates are excluded")).to_be_visible()
+            expect(page.get_by_text("GPS coordinates, email addresses and phone numbers are excluded").last).to_be_visible()
             expect(page.get_by_text("Destination")).to_be_visible()
 
         run_case(results, "Expandable handover package", handover_card)
@@ -110,10 +127,11 @@ def main() -> int:
         def composer_scroll_and_keyboard() -> None:
             page.locator("[role=log]").evaluate("node => node.parentElement.scrollTop = node.parentElement.scrollHeight")
             footer_bottom = page.locator("footer").bounding_box()["y"] + page.locator("footer").bounding_box()["height"]
-            assert footer_bottom <= page.viewport_size["height"] + 1
-            assert page.evaluate("document.scrollingElement.scrollHeight === document.scrollingElement.clientHeight")
+            assert footer_bottom <= page.viewport_size["height"] + 1, f"composer bottom {footer_bottom} is below the viewport"
+            sizes = page.evaluate("[document.scrollingElement.scrollHeight, document.scrollingElement.clientHeight]")
+            assert sizes[0] == sizes[1], f"page itself scrolls (scrollHeight, clientHeight) = {sizes}"
             page.get_by_label("Message the Eco-Travel Advisor").focus()
-            assert page.evaluate("document.activeElement.id")
+            assert page.evaluate("document.activeElement.id"), "message field did not take keyboard focus"
 
         run_case(results, "Composer stays visible while conversation scrolls", composer_scroll_and_keyboard)
 

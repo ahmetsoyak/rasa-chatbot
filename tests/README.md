@@ -79,8 +79,8 @@ rasa test --stories tests/test_stories.yml --nlu data/nlu.yml
   is understood normally.
 - **Fallback escalation**: two consecutive low-confidence turns trigger
   `action_default_fallback` twice, which internally escalates to
-  `action_human_handover` (stage 2), per the design documented at the top of
-  `data/rules.yml`.
+  a consent request for `action_human_handover` (stage 2). No advisor package
+  is created until the user explicitly confirms.
 - **Direct human advisor request**: a clear, high-confidence request for a
   human advisor bypasses fallback entirely and escalates immediately.
 - **Out-of-scope redirection**: an out-of-scope message is handled
@@ -104,7 +104,24 @@ rasa test --stories tests/test_stories.yml --nlu data/nlu.yml
   known, expected pattern, not a wiring bug.
 - Directions for improvement if more time/data were available: (1) collect
   real user utterances rather than synthetic examples, (2) merge or
-  restructure semantically overlapping intents, (3) swap in the commented
-  HFTransformersNLP + DistilBERT pipeline in `config.yml` for pretrained
+  restructure semantically overlapping intents, (3) enable the commented
+  `LanguageModelFeaturizer` + DistilBERT pipeline in `config.yml` for pretrained
   embeddings, which typically generalises much better on small datasets than
   the sparse CountVectors features used here.
+
+## User-test plan for the report
+
+The brief labels user testing as optional, but testing is worth 15%; include
+this small, reproducible study in the report. Recruit 5-8 adults who have
+planned a trip in the last year. Do not collect names, emails, exact travel
+dates or GPS coordinates. Give each participant the same three tasks: plan a
+budget city break, compare a high-emission route with a lower-carbon option,
+and request a human advisor then accept or decline the consent prompt.
+
+Record task completion (success/fail), elapsed time, clarification/fallback
+count and any critical issue. Afterwards, ask five 1-5 Likert questions:
+clarity, trust in carbon information, usefulness of recommendations, ease of
+handover consent, and overall ease of use. Report median and range (not just
+the mean), a short thematic summary of comments, and one design change made in
+response. State plainly that this is a formative convenience sample rather
+than a statistically generalisable study.

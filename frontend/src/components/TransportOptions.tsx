@@ -18,7 +18,9 @@ export function TransportOptions({ payload }: { payload: TransportOptionsPayload
   if (counts.length === 0 && routes.length === 0) {
     return (
       <p className="max-w-md text-sm text-muted-foreground">
-        I don't have public-transport data for {payload.destination ?? "this destination"} yet.
+        {payload.unavailable
+          ? `I couldn't get live local transit data for ${payload.destination ?? "this destination"} right now.`
+          : `I don't have public-transport data for ${payload.destination ?? "this destination"} yet.`}
       </p>
     );
   }

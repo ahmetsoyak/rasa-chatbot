@@ -1,8 +1,10 @@
 """Fallback clarification and human-advisor handover actions."""
 
 import json
+import hashlib
 import logging
 import os
+import re
 import time
 import uuid
 from typing import Any, Dict, List, Text
@@ -20,6 +22,10 @@ _ACTIONS_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.dirname(_ACTIONS_DIR)
 _DATA_DIR = os.path.join(_PROJECT_ROOT, "rasa", "data")
 HANDOVER_LOG_PATH = http.env("HANDOVER_LOG_PATH", os.path.join(_DATA_DIR, "handover_log.jsonl"))
+HANDOVER_RETENTION_DAYS = 30
+
+_EMAIL = re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b")
+_PHONE = re.compile(r"(?<!\w)(?:\+?\d[\d\s().-]{6,}\d)(?!\w)")
 
 _INTENT_LABELS = {
     "request_trip_planning": "Plan a trip",
@@ -48,6 +54,44 @@ def _consecutive_fallbacks(tracker: Tracker) -> int:
     return max(count, 1)
 
 
+def _redact_free_text(text: Text) -> Text:
+    """Remove common direct identifiers before an advisor receives a transcript."""
+    return _PHONE.sub("[phone number removed]", _EMAIL.sub("[email removed]", text))
+
+
+def _retention_days() -> int:
+    raw = http.env("HANDOVER_RETENTION_DAYS", str(HANDOVER_RETENTION_DAYS))
+    try:
+        return max(1, min(int(raw), 365))
+    except ValueError:
+        return HANDOVER_RETENTION_DAYS
+
+
+def purge_expired_handover_records(path: Text, now: float = None) -> None:
+    """Keep only records within the configured retention period.
+
+    The local JSONL queue is deliberately small and transient. Invalid/old
+    rows are discarded instead of risking their indefinite retention.
+    """
+    if not os.path.exists(path):
+        return
+    cutoff = (time.time() if now is None else now) - (_retention_days() * 86400)
+    kept = []
+    try:
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                try:
+                    record = json.loads(line)
+                    if float(record.get("created_at", 0)) >= cutoff:
+                        kept.append(json.dumps(record))
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    continue
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(kept) + ("\n" if kept else ""))
+    except OSError as exc:
+        logger.warning("Could not purge expired handover records: %s", type(exc).__name__)
+
+
 def build_handover_package(tracker: Tracker, reason: Text) -> Dict[str, Any]:
     """Build the privacy-preserving context package sent to an advisor."""
     slots = dict(tracker.slots or {})
@@ -58,7 +102,7 @@ def build_handover_package(tracker: Tracker, reason: Text) -> Dict[str, Any]:
             text = event["text"]
             if event["event"] == "user" and text.startswith("/share_location"):
                 text = "[shared their location]"
-            transcript.append({"from": event["event"], "text": text, "timestamp": event.get("timestamp")})
+            transcript.append({"from": event["event"], "text": _redact_free_text(text), "timestamp": event.get("timestamp")})
     last = tracker.get_slot("last_results") or {}
     summary_bits = [f"{key.replace('_', ' ')}: {value}" for key, value in (
         ("destination", slots.get("destination")), ("origin", slots.get("origin")),
@@ -66,7 +110,9 @@ def build_handover_package(tracker: Tracker, reason: Text) -> Dict[str, Any]:
         ("sustainability", slots.get("sustainability_level"))) if value]
     return {
         "ticket_id": f"ECO-{uuid.uuid4().hex[:8].upper()}",
-        "sender_id": tracker.sender_id,
+        # A stable pseudonym lets the advisor link a ticket to this chat
+        # without exporting Rasa's raw sender identifier.
+        "sender_reference": hashlib.sha256(tracker.sender_id.encode("utf-8")).hexdigest()[:16],
         "reason": reason,
         "summary": "; ".join(summary_bits) or "No trip details collected yet.",
         "trip": {key: slots.get(key) for key in ("destination", "origin", "travel_dates", "budget",
@@ -74,7 +120,10 @@ def build_handover_package(tracker: Tracker, reason: Text) -> Dict[str, Any]:
         "recommendations_shown": last,
         "transcript": transcript,
         "created_at": time.time(),
-        "privacy": "GPS coordinates are excluded; delete after the advisor closes the ticket.",
+        "privacy": (
+            f"Shared only after your confirmation. GPS coordinates, email addresses and phone numbers are excluded; "
+            f"the handover record is automatically deleted after {_retention_days()} days."
+        ),
     }
 
 
@@ -86,9 +135,21 @@ class ActionHumanHandover(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any],
             reason: Text = "user_requested") -> List[EventType]:
+        if tracker.get_slot("handover_consent") is not True:
+            dispatcher.utter_message(
+                text=("Before I share a handover with a human advisor, do you agree to share your trip summary, "
+                      "recommendations and a redacted transcript? GPS coordinates, email addresses and phone numbers "
+                      "are excluded. The record is deleted automatically after 30 days."),
+                buttons=[
+                    {"title": "Yes, share my trip details", "payload": "/confirm_handover"},
+                    {"title": "No, continue with the bot", "payload": "/decline_handover"},
+                ],
+            )
+            return [SlotSet("handover_consent_requested", True)]
         package = build_handover_package(tracker, reason)
         try:
             os.makedirs(os.path.dirname(HANDOVER_LOG_PATH), exist_ok=True)
+            purge_expired_handover_records(HANDOVER_LOG_PATH)
             with open(HANDOVER_LOG_PATH, "a", encoding="utf-8") as handle:
                 handle.write(json.dumps(package) + "\n")
         except OSError as exc:
@@ -115,6 +176,25 @@ class ActionHumanHandover(Action):
             },
         })
         return [SlotSet("handover_requested", True)]
+
+
+class ActionRecordHandoverConsent(Action):
+    """Record an explicit handover decision for the current session only."""
+
+    def name(self) -> Text:
+        return "action_record_handover_consent"
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[EventType]:
+        intent = ((tracker.latest_message or {}).get("intent") or {}).get("name")
+        # A bare "I agree" elsewhere in a conversation is not a valid
+        # consent signal; confirmation must answer the immediately preceding
+        # handover notice.
+        consented = intent == "confirm_handover" and tracker.get_slot("handover_consent_requested") is True
+        if not consented:
+            dispatcher.utter_message(
+                text="No handover was shared. You can continue planning here or ask again later."
+            )
+        return [SlotSet("handover_consent", consented), SlotSet("handover_consent_requested", False)]
 
 
 class ActionDefaultFallback(Action):

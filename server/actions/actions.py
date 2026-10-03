@@ -6,6 +6,7 @@ import os
 import re
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Text
 
 import requests
@@ -18,7 +19,8 @@ from rasa_sdk.types import DomainDict
 from actions.services import accommodation
 from actions.services import carbon, currency, geo, http, osm, weather, wiki
 from actions import handover as handover_module
-from actions.handover import ActionDefaultFallback, ActionHumanHandover as _ActionHumanHandover, build_handover_package
+from actions.handover import (ActionDefaultFallback, ActionHumanHandover as _ActionHumanHandover,
+                              ActionRecordHandoverConsent, build_handover_package)
 
 load_dotenv()
 
@@ -30,6 +32,7 @@ _MOCK_DATA_DIR = os.path.join(_PROJECT_ROOT, "mock_data")
 _DATA_DIR = os.path.join(_PROJECT_ROOT, "rasa", "data")
 
 OFFSET_PROGRAMS_PATH = os.path.join(_MOCK_DATA_DIR, "offset_programs.json")
+ACCOMMODATION_SAMPLE_PATH = os.path.join(_MOCK_DATA_DIR, "accommodation_samples.json")
 HANDOVER_LOG_PATH = http.env("HANDOVER_LOG_PATH", os.path.join(_DATA_DIR, "handover_log.jsonl"))
 
 
@@ -152,6 +155,22 @@ def _message_text(tracker: Tracker) -> Text:
     return "" if text.startswith("/") else text
 
 
+def _destination_phrase(text: Text) -> Text:
+    """Extract a likely place phrase from an otherwise natural sentence.
+
+    DIET deliberately does not force every unknown word to be a location. For
+    an intent that is already confidently ``inform_destination``, recover the
+    phrase after common travel wording and let the geocoder/fuzzy gazetteer
+    validate it. This supports inputs such as "I would like to go Cophanagen"
+    without treating arbitrary hotel-request words as cities.
+    """
+    cleaned = text.strip().rstrip("?.!")
+    match = re.search(r"\b(?:go|travel|head|fly|drive)(?:\s+to)?\s+(.+)$|\bvisit\s+(.+)$|\bdestination\s+is\s+(.+)$", cleaned, re.I)
+    if match:
+        return next(part.strip() for part in match.groups() if part)
+    return cleaned
+
+
 def _user_currency(tracker: Tracker) -> Text:
     return tracker.get_slot("user_currency") or "EUR"
 
@@ -270,14 +289,20 @@ class ActionSetDestination(Action):
         return "action_set_destination"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[EventType]:
-        if _entity(tracker, "destination"):
-            return []
-        text = _message_text(tracker).strip()
-        place = geo.geocode(text) if 0 < len(text) <= 40 else None
+        extracted = _entity(tracker, "destination")
+        raw = extracted or _destination_phrase(_message_text(tracker))
+        raw = str(raw).strip()
+        place = geo.geocode(raw) if 0 < len(raw) <= 40 else None
         if place:
+            if extracted and raw.lower() == place["name"].lower():
+                # Rasa has already set this valid entity through the slot
+                # mapping; avoid creating a redundant slot event.
+                return []
+            if raw.lower() != place["name"].lower():
+                dispatcher.utter_message(text=f"I'll use {place['name']} for '{raw}'.")
             return [SlotSet("destination", place["name"])]
-        if text:
-            dispatcher.utter_message(text=f"I couldn't match '{text}' to a place.")
+        if raw:
+            dispatcher.utter_message(text=f"I couldn't match '{raw}' to a place.")
         return [SlotSet("destination", None)]
 
 
@@ -456,14 +481,15 @@ class ValidateTripPlanningForm(FormValidationAction):
 
 
 
-def _osm_hotel_card(h: Dict[str, Any], user_cur: Text, cap_eur: Optional[float]) -> Dict[str, Any]:
+def _osm_hotel_card(h: Dict[str, Any], user_cur: Text, cap_eur: Optional[float],
+                    data_source: Text = "OpenStreetMap") -> Dict[str, Any]:
     price_user = _convert_or_none(h["est_price_eur"], "EUR", user_cur)
     within = cap_eur is None or h["est_price_eur"] <= cap_eur
     return {
         "name": h["name"],
-        "eco_certification": None,
+        "eco_certification": h.get("eco_certification") if h.get("sample_data") else None,
         "eco_tag": h.get("eco_tag"),
-        "verification": "unverified_osm_tag" if h.get("eco_tag") else "none",
+        "verification": "sample_data" if h.get("sample_data") else ("unverified_osm_tag" if h.get("eco_tag") else "none"),
         "proxies": h.get("proxies", []),
         "type": (h.get("type") or "hotel").replace("_", " "),
         "price_band": h.get("price_band"),
@@ -476,7 +502,7 @@ def _osm_hotel_card(h: Dict[str, Any], user_cur: Text, cap_eur: Optional[float])
         "within_budget": within,
         "wheelchair": h.get("wheelchair"),
         "booking_url": h.get("website"),
-        "data_source": "OpenStreetMap",
+        "data_source": data_source,
         "score": h.get("score"),
     }
 
@@ -487,20 +513,35 @@ def find_accommodation(destination: Optional[Text], sustainability_level: Option
     cap = BUDGET_NIGHTLY_CAP_EUR.get(budget_tier or "", None)
     place = geo.geocode(destination) if destination else None
     if not place:
-        return {"source": "osm", "items": []}
-    stops = osm.transport(place["lat"], place["lon"])
-    raw_hotels = osm.hotels(place["lat"], place["lon"])
+        return {"source": "osm", "items": [], "unknown_destination": True}
+    # Both OpenStreetMap lookups are independent. Parallel execution keeps a
+    # degraded public API within one short interaction-time budget.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        stops_future = pool.submit(osm.transport, place["lat"], place["lon"])
+        hotels_future = pool.submit(osm.hotels, place["lat"], place["lon"])
+        stops, raw_hotels = stops_future.result(), hotels_future.result()
+    source = "osm"
     if stops is None or raw_hotels is None:
-        return {"source": "osm", "items": [], "unavailable": True}
+        # Public Overpass mirrors are often unavailable. The brief permits a
+        # curated mock database for exactly this case; use it transparently
+        # rather than leaving the main hotel experience non-functional.
+        samples = _safe_load_json(ACCOMMODATION_SAMPLE_PATH, {})
+        raw_hotels = samples.get(place["name"].strip().lower(), [])
+        if not raw_hotels:
+            return {"source": "osm", "items": [], "unavailable": True}
+        stops, source = [], "curated_demo"
     hotels = []
     for raw in raw_hotels:
         h = accommodation.enrich_hotel(raw, stops)
+        if source == "curated_demo":
+            h["sample_data"] = True
+            h["eco_certification"] = raw.get("eco_certification")
         h["_bonus"] = min(1.0, accommodation.proxy_score(h) / 3.0) * 0.5 + (
             0.5 if cap is None or h["est_price_eur"] <= cap else 0.0)
         hotels.append(h)
     ranked = _rank_candidates(hotels, "est_kg_co2e_per_night", "est_price_eur",
                               sustainability_level, preference_bonus_key="_bonus")
-    return {"source": "osm", "items": ranked}
+    return {"source": source, "items": ranked}
 
 
 
@@ -519,6 +560,18 @@ class ActionSearchAccommodations(Action):
         cap = BUDGET_NIGHTLY_CAP_EUR.get(tier or "", None)
 
         result = find_accommodation(destination, level, tier)
+        if result.get("unknown_destination"):
+            # NLU can occasionally mistake a word near "hotel" or
+            # "recommend" for a location. Never show that token back as a
+            # destination or try to query accommodation providers with it.
+            dispatcher.utter_message(
+                text="I need a city or destination before I can recommend a hotel. Where are you travelling to?",
+                buttons=[
+                    {"title": name, "payload": f'/inform_destination{{"destination": "{name}"}}'}
+                    for name in geo.known_destinations()[:4]
+                ],
+            )
+            return [SlotSet("destination", None)]
         top = result["items"][:3]
         if not top:
             reason = "I couldn't reach OpenStreetMap right now" if result.get("unavailable") else "I couldn't find named places to stay"
@@ -532,8 +585,13 @@ class ActionSearchAccommodations(Action):
             )
             return []
 
-        cards = [_osm_hotel_card(h, user_cur, cap) for h in top]
-        note = ("Real places from OpenStreetMap. None has a verified eco-certification. OSM rarely records it, "
+        is_sample = result.get("source") == "curated_demo"
+        data_source = "Curated demo data" if is_sample else "OpenStreetMap"
+        cards = [_osm_hotel_card(h, user_cur, cap, data_source=data_source) for h in top]
+        note = ("The live map service is unavailable, so these are clearly-labelled illustrative entries from a curated "
+                "local demo set; they are not verified listings or booking quotes. Prices and footprints are estimates."
+                if is_sample else
+                "Real places from OpenStreetMap. None has a verified eco-certification. OSM rarely records it, "
                 "so I show observable indicators instead (e.g. distance to rail or tram). "
                 "Prices and footprints are estimates by accommodation type.")
 
@@ -596,6 +654,20 @@ class ActionCalculateCarbonFootprint(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[EventType]:
         requested = _entity(tracker, "travel_mode")
+        if not requested:
+            # A short follow-up such as "what if I fly?" is reliably
+            # classified as a carbon question but can miss entity extraction.
+            # Recover only explicit mode words; never guess a mode otherwise.
+            words = _message_text(tracker).lower()
+            for pattern, mode in ((r"\b(?:fly|flying|plane|flight)\b", "flight"),
+                                  (r"\b(?:train|rail)\b", "train"),
+                                  (r"\b(?:bus|coach)\b", "bus"),
+                                  (r"\b(?:drive|driving|car)\b", "car"),
+                                  (r"\b(?:bike|cycle|cycling)\b", "bike"),
+                                  (r"\b(?:ferry|boat)\b", "ferry")):
+                if re.search(pattern, words):
+                    requested = mode
+                    break
         dist = _trip_distance(tracker)
         km, flight_km = dist["km"], dist["flight_km"]
 
@@ -700,6 +772,7 @@ class ActionSearchTransport(Action):
             lines.append(f"Getting around {destination}: within 1.5 km of the centre there are " + ", ".join(parts) + ".")
             lines.append("These are stop locations from OpenStreetMap. I don't have live timetables, so check the local operator.")
         else:
+            payload["unavailable"] = stops is None
             lines.append(f"I couldn't get live local transit data for {destination} right now.")
 
         routes: List[Dict[str, Any]] = []

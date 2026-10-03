@@ -15,6 +15,7 @@ Query design notes:
 """
 
 import time
+from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Any, Dict, List, Optional
 
 from . import http
@@ -26,14 +27,39 @@ OVERPASS_URLS = [
 
 ECO_TAGS = ("green_key", "ecolabel", "eco_label", "certification", "sustainability")
 
+# Successful responses are reused for a while: hotel search and the follow-up
+# local-transport card ask Overpass the same question seconds apart, and a
+# mirror that answered once may time out on the repeat.
+CACHE_TTL_S = 3600.0
+_cache: Dict[str, Any] = {}
 
-def run_query(query: str, retries: int = 2) -> Optional[List[Dict[str, Any]]]:
-    for attempt in range(retries + 1):
-        for url in OVERPASS_URLS:
-            body = http.post_json(url, data={"data": query}, timeout=http.LONG_TIMEOUT)
+
+def run_query(query: str) -> Optional[List[Dict[str, Any]]]:
+    """Try independent public mirrors concurrently within the turn budget.
+
+    Overpass is a best-effort enrichment, not a reason to leave a traveller
+    staring at a typing indicator for several minutes. A 504 or timeout now
+    gives an honest unavailable response promptly; it is not retried during
+    the same conversation turn.
+    """
+    cached = _cache.get(query)
+    if cached and time.monotonic() - cached[0] < CACHE_TTL_S:
+        return cached[1]
+    with ThreadPoolExecutor(max_workers=len(OVERPASS_URLS)) as pool:
+        futures = [pool.submit(http.post_json, url, data={"data": query}, timeout=http.LIVE_TIMEOUT)
+                   for url in OVERPASS_URLS]
+        done, pending = wait(futures, timeout=http.LIVE_TIMEOUT + 0.2)
+        for future in done:
+            try:
+                body = future.result()
+            except Exception:  # Defensive: a public mirror must not break a reply.
+                body = None
             if body is not None:
-                return body.get("elements", [])
-        time.sleep(5 * (attempt + 1))
+                elements = body.get("elements", [])
+                _cache[query] = (time.monotonic(), elements)
+                return elements
+        for future in pending:
+            future.cancel()
     return None
 
 

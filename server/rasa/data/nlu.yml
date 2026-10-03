@@ -686,6 +686,22 @@ nlu:
       - how do you use my personal information?
       - can you delete my data?
       - privacy policy?
+
+  - intent: confirm_handover
+    examples: |
+      - yes, share my trip details
+      - yes, I consent to the handover
+      - send it to the advisor
+      - I agree
+      - confirm handover
+
+  - intent: decline_handover
+    examples: |
+      - no, continue with the bot
+      - do not share my details
+      - I do not consent
+      - cancel the handover
+      - I prefer not to share
       - do you share my details with anyone?
       - will the advisor see my chat?
       - is this conversation recorded?

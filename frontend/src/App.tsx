@@ -38,7 +38,7 @@ function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const hintId = useId();
-  const lastBotText = [...messages].reverse().find((message) => message.sender === "bot")?.text?.toLowerCase() ?? "";
+  const lastBotText = [...messages].reverse().find((message) => message.sender === "bot" && message.text)?.text?.toLowerCase() ?? "";
   const placeholder = lastBotText.includes("what dates")
     ? "When are you travelling?"
     : lastBotText.includes("budget")
@@ -93,7 +93,7 @@ function App() {
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="relative min-h-0 flex-1 overflow-y-auto">
           <div
             className="mx-auto flex max-w-2xl flex-col gap-4 p-4"
             role="log"
@@ -101,11 +101,12 @@ function App() {
             aria-relevant="additions"
             aria-label="Conversation with the Eco-Travel Advisor"
           >
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <MessageBubble
                 key={message.id}
                 message={message}
                 disabled={isSending}
+                isLatest={index === messages.length - 1}
                 onButtonClick={(payload, title) => void pressButton(payload, title)}
               />
             ))}

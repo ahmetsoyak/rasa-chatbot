@@ -2,8 +2,8 @@
 # Eco-Travel Advisor — Rasa Open Source NLU + Core config
 # ============================================================================
 # Follows the brief: DIETClassifier on a spaCy tokeniser + featurisers,
-# chosen for accuracy vs. CPU latency. A DistilBERT variant is sketched
-# (commented) below the DIET block.
+# chosen for accuracy vs. CPU latency. A current Rasa 3-compatible
+# DistilBERT variant is sketched (commented) below the DIET block.
 # ============================================================================
 
 recipe: default.v1

@@ -21,6 +21,8 @@ intents:
   - ask_cultural_experiences
   - ask_carbon_offset
   - request_human_advisor
+  - confirm_handover
+  - decline_handover
   - inform_origin
   - share_location
   - ask_weather
@@ -148,6 +150,20 @@ slots:
     mappings:
       - type: custom
 
+  handover_consent:
+    type: bool
+    initial_value: false
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  handover_consent_requested:
+    type: bool
+    initial_value: false
+    influence_conversation: true
+    mappings:
+      - type: custom
+
   clarification_attempts:
     type: float
     initial_value: 0
@@ -180,6 +196,9 @@ responses:
 
   utter_ask_travel_dates:
     - text: "What dates are you planning to travel? (e.g. '2026-10-01 to 2026-10-10')"
+      # The web chat renders date chips for this; text-only channels ignore it.
+      custom:
+        type: date_picker
 
   utter_ask_budget:
     - text: "What's your approximate budget for this trip? (e.g. '$1500' or 'medium budget')"
@@ -188,7 +207,7 @@ responses:
     - text: "Got it: {destination}, {travel_dates}, budget {budget}, {sustainability_level} sustainability priority. Let me find some eco-friendly options for you."
 
   utter_privacy:
-    - text: "I only use what you tell me (destination, dates, budget, preferences and, if you allow it, your location) to answer during this chat. GPS coordinates are never written to the advisor log. If you're handed to a human advisor, they see your trip details and this conversation so you don't have to repeat yourself. You can ask for that record to be deleted at any time (GDPR Art. 17)."
+    - text: "I use destination, dates, budget, preferences and, only if you allow it, location to answer in this chat. GPS coordinates are never included in an advisor handover. Before any handover I ask for your explicit confirmation; the advisor receives the trip summary, recommendations and a redacted transcript (email addresses and phone numbers removed). Handover records are deleted automatically after 30 days, and you can request deletion sooner."
 
   utter_out_of_scope:
     - text: "I'm focused on sustainable travel planning, so I can't help with that — but I'd love to help you plan an eco-friendly trip!"
@@ -221,6 +240,7 @@ actions:
   - action_search_cultural_experiences
   - action_rank_recommendations
   - action_human_handover
+  - action_record_handover_consent
   - action_default_fallback
 
 session_config:
