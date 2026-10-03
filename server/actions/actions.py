@@ -155,6 +155,16 @@ def _message_text(tracker: Tracker) -> Text:
     return "" if text.startswith("/") else text
 
 
+def _said_this_turn(tracker: Tracker, text: Text) -> bool:
+    """Whether the bot already sent `text` since the user's latest message."""
+    for event in reversed(tracker.events):
+        if event.get("event") == "user":
+            return False
+        if event.get("event") == "bot" and event.get("text") == text:
+            return True
+    return False
+
+
 def _destination_phrase(text: Text) -> Text:
     """Extract a likely place phrase from an otherwise natural sentence.
 
@@ -420,8 +430,11 @@ class ValidateTripPlanningForm(FormValidationAction):
                 text=f"I couldn't find '{values[0]}' on the map. Could you check the spelling or give a nearby city?"
             )
             return {"destination": None}
-        if place.get("source") == "gazetteer_fuzzy":
-            dispatcher.utter_message(text=f"I'll use {place['name']} for '{values[0]}'.")
+        correction = f"I'll use {place['name']} for '{values[0]}'."
+        # action_set_destination may already have announced the same
+        # correction when the misspelt city was extracted as an entity.
+        if place.get("source") == "gazetteer_fuzzy" and not _said_this_turn(tracker, correction):
+            dispatcher.utter_message(text=correction)
         out: Dict[Text, Any] = {"destination": place["name"]}
         # A bare city name typed as the answer can be tagged as `origin` by the
         # NLU model; the same city can't be both, so drop the origin.

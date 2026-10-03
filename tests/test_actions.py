@@ -591,6 +591,16 @@ class TestTripPlanningForm:
         assert out == {"destination": "Copenhagen"}
         assert texts(dispatcher) == ["I'll use Copenhagen for 'Cophanagen'."]
 
+    def test_destination_correction_is_not_repeated_in_the_same_turn(self, dispatcher):
+        # action_set_destination already announced it before the form ran.
+        tracker = make_tracker(events=[
+            {"event": "user", "text": "I would like to go Cophanagen"},
+            {"event": "bot", "text": "I'll use Copenhagen for 'Cophanagen'."},
+        ])
+        out = self.validator.validate_destination("Cophanagen", dispatcher, tracker, {})
+        assert out == {"destination": "Copenhagen"}
+        assert texts(dispatcher) == []
+
     def test_destination_clears_origin_mis_tagged_as_same_city(self, dispatcher):
         tracker = make_tracker(slots={"origin": "Lisbon"})
         out = self.validator.validate_destination("Lisbon", dispatcher, tracker, {})
