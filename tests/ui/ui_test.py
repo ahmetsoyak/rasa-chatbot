@@ -94,7 +94,12 @@ def main() -> int:
         run_case(results, "Date chips turn 'in 4 days for 5 nights' into a date range", date_chips)
 
         def complete_trip() -> None:
-            say(page, "£1200")
+            expect(page.get_by_role("group", name="Budget levels")).to_be_visible()
+            page.get_by_label("Currency").select_option("GBP")
+            page.get_by_label("Total amount").fill("1200")
+            expect(page.get_by_role("group", name="Choose a budget").get_by_role("status")).to_have_text("£1,200 for the whole trip")
+            click(page, "Use this budget")
+            expect(page.get_by_text("£1,200 in total").last).to_be_visible()
             click(page, "Lowest carbon (80% carbon)")
             expect(page.get_by_role("group", name="Advisor: places to stay in Copenhagen")).to_be_visible(timeout=45_000)
             expect(page.get_by_text("All options, lowest first")).to_be_visible()

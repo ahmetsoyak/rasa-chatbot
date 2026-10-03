@@ -19,6 +19,8 @@
  * handover_notice         action_human_handover
  * date_picker             utter_ask_travel_dates (domain response; opens the
  *                         date chips, which send "YYYY-MM-DD to YYYY-MM-DD")
+ * budget_picker           utter_ask_budget (domain response; sends
+ *                         /inform_budget{"budget": "low"} or "<amount> <CURRENCY>")
  */
 
 /** Emission-severity band. Transport bands are by intensity (g CO2e per passenger-km). */

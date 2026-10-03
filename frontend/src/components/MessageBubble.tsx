@@ -10,6 +10,7 @@ import { TransportOptions } from "@/components/TransportOptions";
 import { WeatherCard } from "@/components/WeatherCard";
 import { HandoverCard } from "@/components/HandoverCard";
 import { DatePicker } from "@/components/DatePicker";
+import { BudgetPicker } from "@/components/BudgetPicker";
 import {
   payloadIs,
   type CarbonScoreCardPayload,
@@ -27,7 +28,7 @@ interface MessageBubbleProps {
   message: ChatMessage;
   onButtonClick: (payload: string, title: string) => void;
   disabled: boolean;
-  /** Interactive prompts (the date picker) only work on the newest message. */
+  /** Interactive prompts (date and budget pickers) only work on the newest message. */
   isLatest?: boolean;
 }
 
@@ -71,11 +72,14 @@ export function MessageBubble({ message, onButtonClick, disabled, isLatest = fal
   }
 
   if (message.companion) return null;
-  if (payloadIs(message.custom, "date_picker")) {
+  const isDatePicker = payloadIs(message.custom, "date_picker");
+  if (isDatePicker || payloadIs(message.custom, "budget_picker")) {
     if (!isLatest) return null;
     return (
       <div className="w-full pl-10">
-        <DatePicker disabled={disabled} onSubmit={onButtonClick} />
+        {isDatePicker
+          ? <DatePicker disabled={disabled} onSubmit={onButtonClick} />
+          : <BudgetPicker disabled={disabled} onSubmit={onButtonClick} />}
       </div>
     );
   }

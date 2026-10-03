@@ -202,6 +202,9 @@ responses:
 
   utter_ask_budget:
     - text: "What's your approximate budget for this trip? (e.g. '$1500' or 'medium budget')"
+      # The web chat renders budget chips for this; text-only channels ignore it.
+      custom:
+        type: budget_picker
 
   utter_trip_summary:
     - text: "Got it: {destination}, {travel_dates}, budget {budget}, {sustainability_level} sustainability priority. Let me find some eco-friendly options for you."
