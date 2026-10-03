@@ -2,6 +2,9 @@
 
 Start the Rasa server (:5005), action server (:5055), and Vite (:5173), then:
     .venv-test/bin/python tests/ui/ui_test.py
+
+Against the single-container build (see Dockerfile) or a deployed Space:
+    .venv-test/bin/python tests/ui/ui_test.py --url http://127.0.0.1:7860
 """
 
 import argparse
@@ -50,6 +53,7 @@ def run_case(results: list[dict], name: str, check) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="results/ui", help="Directory for screenshots and report.json")
+    parser.add_argument("--url", default=APP_URL, help="Chat UI to test (default: local Vite dev server)")
     args = parser.parse_args()
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
@@ -67,7 +71,7 @@ def main() -> int:
         console_errors: list[str] = []
         page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
         page.on("pageerror", lambda error: console_errors.append(str(error)))
-        page.goto(APP_URL, wait_until="domcontentloaded")
+        page.goto(args.url, wait_until="domcontentloaded")
 
         def origin_and_typo() -> None:
             click(page, "Use my departure location")

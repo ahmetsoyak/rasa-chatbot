@@ -1,9 +1,9 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help validate test-actions test-core test-core-e2e train run-actions run-bot frontend-check frontend-dev clean-local
+.PHONY: help validate test-actions test-core test-core-e2e train run-actions run-bot frontend-check frontend-dev deploy-hf clean-local
 
 help:
-	@echo "Available targets: validate, test-actions, test-core, test-core-e2e, train, run-actions, run-bot, frontend-check, frontend-dev, clean-local"
+	@echo "Available targets: validate, test-actions, test-core, test-core-e2e, train, run-actions, run-bot, frontend-check, frontend-dev, deploy-hf, clean-local"
 
 validate:
 	cd server && ../.venv310/bin/rasa data validate --config rasa/config.yml --domain rasa/domain.yml --data rasa/data
@@ -34,5 +34,8 @@ frontend-dev:
 
 # Removes ignored, reproducible local artefacts only. It never deletes source,
 # cache data, environment files, or committed project material.
+deploy-hf:
+	.venv310/bin/python server/scripts/deploy_hf_space.py
+
 clean-local:
 	git clean -Xdf -e .env

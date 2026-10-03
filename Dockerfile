@@ -2,15 +2,19 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+ENV PYTHONUNBUFFERED=1 \
+    RASA_TELEMETRY_ENABLED=false
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl gnupg nginx supervisor \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-COPY server/requirements/rasa.txt server/requirements/actions.txt ./requirements/
-RUN pip install --no-cache-dir -r requirements/rasa.txt -r requirements/actions.txt \
-    && python -m spacy download en_core_web_md
+COPY server/requirements/rasa.txt server/requirements/actions.txt server/requirements/constraints.txt ./requirements/
+RUN pip install --no-cache-dir -c requirements/constraints.txt -r requirements/rasa.txt -r requirements/actions.txt \
+    && pip install --no-cache-dir \
+    https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.1/en_core_web_md-3.4.1-py3-none-any.whl
 
 COPY server/ ./server/
 RUN cd server && rasa train --config rasa/config.yml --domain rasa/domain.yml --data rasa/data \
@@ -28,4 +32,4 @@ RUN useradd --create-home --uid 1000 appuser \
 
 USER appuser
 EXPOSE 7860
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/eco-travel.conf"]
