@@ -1,0 +1,19 @@
+FROM rasa/rasa:3.6.20-full
+
+WORKDIR /app/server
+
+USER root
+
+COPY server/rasa/ ./rasa/
+
+RUN sed -i 's#http://localhost:5055/webhook#http://action_server:5055/webhook#' rasa/endpoints.yml
+
+RUN python -c "import spacy; spacy.load('en_core_web_md')" 2>/dev/null \
+    || python -m spacy download en_core_web_md
+
+RUN rasa train --config rasa/config.yml --domain rasa/domain.yml --data rasa/data \
+    --out models --fixed-model-name eco-travel-advisor
+
+EXPOSE 5005
+
+CMD ["run", "--credentials", "rasa/credentials.yml", "--endpoints", "rasa/endpoints.yml", "--enable-api", "--cors", "*", "--port", "5005"]

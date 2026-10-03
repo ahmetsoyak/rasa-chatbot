@@ -1,0 +1,352 @@
+version: "3.1"
+
+# Dialogue test stories for `rasa test core --stories tests/test_stories.yml`.
+# Each story checks that the policies predict the right next actions, given
+# the labelled intents. Coverage: the brief's three scenarios (city break,
+# rural eco-tour, carbon-neutral business trip), GPS and typed location,
+# questions asked in the middle of the form, the three-stage fallback,
+# preference changes, privacy, out-of-scope and human handover.
+
+stories:
+  # --- Scenario 1: short city break, one slot per turn -----------------------
+  - story: city break in Lisbon, slot by slot
+    steps:
+      - user: |
+          hi there
+        intent: greet
+      - action: utter_greet
+      - user: |
+          I want to plan a trip
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          [Lisbon](destination)
+        intent: inform_destination
+      - action: trip_planning_form
+      - user: |
+          [10 to 15 May](travel_date)
+        intent: inform_dates
+      - action: trip_planning_form
+      - user: |
+          around [1200 euros](budget)
+        intent: inform_budget
+      - action: trip_planning_form
+      - user: |
+          [balanced](sustainability_level) please
+        intent: inform_sustainability_preference
+      - action: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - user: |
+          what's the weather like there
+        intent: ask_weather
+      - action: action_get_weather
+
+  # --- Scenario 2: rural eco-tour, high sustainability ----------------------
+  - story: rural eco-tour in Monteverde with high sustainability
+    steps:
+      - user: |
+          can you plan an eco tour of [Monteverde](destination)?
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          [next spring](travel_date)
+        intent: inform_dates
+      - action: trip_planning_form
+      - user: |
+          [2000 dollars](budget)
+        intent: inform_budget
+      - action: trip_planning_form
+      - user: |
+          make it a [top priority](sustainability_level)
+        intent: inform_sustainability_preference
+      - action: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - user: |
+          what local experiences are there?
+        intent: ask_cultural_experiences
+      - action: action_search_cultural_experiences
+
+  # --- Scenario 3: carbon-neutral business trip ----------------------------
+  - story: business trip from Berlin, compare flying, then offset
+    steps:
+      - user: |
+          I'm travelling from [Berlin](origin)
+        intent: inform_origin
+      - action: action_set_location
+      - user: |
+          organise a carbon-neutral business trip to [Hamburg](destination) please
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          [next week](travel_date)
+        intent: inform_dates
+      - action: trip_planning_form
+      - user: |
+          [£2000](budget)
+        intent: inform_budget
+      - action: trip_planning_form
+      - user: |
+          [high](sustainability_level)
+        intent: inform_sustainability_preference
+      - action: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - user: |
+          what if I [fly](travel_mode:flight) instead?
+        intent: ask_carbon_footprint
+      - action: action_calculate_carbon_footprint
+      - user: |
+          how do I offset my trip?
+        intent: ask_carbon_offset
+      - action: action_carbon_offset_info
+
+  # --- Location -------------------------------------------------------------
+  - story: GPS location then route comparison
+    steps:
+      - user: |
+          /share_location{"latitude": 52.52, "longitude": 13.4}
+        intent: share_location
+      - action: action_set_location
+      - user: |
+          compare routes to [Lisbon](destination)
+        intent: ask_carbon_footprint
+      - action: action_calculate_carbon_footprint
+      - user: |
+          thanks
+        intent: thank_you
+      - action: utter_thank_you
+
+  - story: naming a destination first starts the form
+    steps:
+      - user: |
+          [Porto](destination)
+        intent: inform_destination
+      - action: action_set_destination
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          [this weekend](travel_date)
+        intent: inform_dates
+      - action: trip_planning_form
+      - user: |
+          [cheap](budget)
+        intent: inform_budget
+      - action: trip_planning_form
+      - user: |
+          [low](sustainability_level) priority
+        intent: inform_sustainability_preference
+      - action: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+
+  # --- Questions in the middle of the form ----------------------------------
+  - story: carbon question mid-form, then the form resumes
+    steps:
+      - user: |
+          I want to plan a trip
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          [Kyoto](destination)
+        intent: inform_destination
+      - action: trip_planning_form
+      - user: |
+          how much co2 is [flying](travel_mode:flight) there?
+        intent: ask_carbon_footprint
+      - action: action_calculate_carbon_footprint
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          [mid-November](travel_date)
+        intent: inform_dates
+      - action: trip_planning_form
+
+  - story: weather and privacy questions mid-form
+    steps:
+      - user: |
+          I want to plan a trip
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          what's the weather like in [Ljubljana](destination)?
+        intent: ask_weather
+      - action: action_get_weather
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          what do you do with my data?
+        intent: ask_privacy
+      - action: utter_privacy
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+
+  - story: location shared mid-form
+    steps:
+      - user: |
+          I want to plan a trip
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          I'm coming from [Paris](origin)
+        intent: inform_origin
+      - action: action_set_location
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+
+  - story: asking for a human mid-form hands over and closes the form
+    steps:
+      - user: |
+          I want to plan a trip
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - user: |
+          this is a multi-city trip, I'd rather talk to a person
+        intent: request_human_advisor
+      - action: action_deactivate_loop
+      - active_loop: null
+      - action: utter_handover_notice
+      - action: action_human_handover
+
+  # --- Fallback: clarification 1 -> clarification 2 -> handover --------------
+  - story: one unclear message, then recovery
+    steps:
+      - user: |
+          hi
+        intent: greet
+      - action: utter_greet
+      - user: |
+          hmm
+        intent: nlu_fallback
+      - action: action_default_fallback
+      - user: |
+          I want to plan a trip
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+
+  - story: three unclear messages escalate to a human
+    steps:
+      - user: |
+          hi
+        intent: greet
+      - action: utter_greet
+      - user: |
+          hmm
+        intent: nlu_fallback
+      - action: action_default_fallback
+      - user: |
+          the thing
+        intent: nlu_fallback
+      - action: action_default_fallback
+      - user: |
+          something else
+        intent: nlu_fallback
+      - action: action_default_fallback
+
+  # --- After the recommendations ------------------------------------------
+  - story: preference change re-ranks the results
+    steps:
+      - user: |
+          I want to plan a trip
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - user: |
+          I care more about price now
+        intent: inform_sustainability_preference
+      - action: action_update_sustainability_level
+      - action: action_search_accommodations
+      - action: action_rank_recommendations
+      - user: |
+          show me public transport there
+        intent: ask_transport_options
+      - action: action_search_transport
+
+  - story: human advisor requested after recommendations
+    steps:
+      - user: |
+          I want to plan a trip
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - user: |
+          can I talk to a real person?
+        intent: request_human_advisor
+      - action: utter_handover_notice
+      - action: action_human_handover
+
+  # --- Small talk, privacy, scope ----------------------------------------
+  - story: privacy question then accommodation search
+    steps:
+      - user: |
+          is my location stored?
+        intent: ask_privacy
+      - action: utter_privacy
+      - user: |
+          find me a green hotel
+        intent: ask_accommodation_options
+      - action: action_search_accommodations
+
+  - story: out of scope, then back on track
+    steps:
+      - user: |
+          what's the capital of France?
+        intent: out_of_scope
+      - action: utter_out_of_scope
+      - user: |
+          ok, help me plan a low-carbon weekend in [Reykjavik](destination)
+        intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+
+  - story: bot challenge, thanks and goodbye
+    steps:
+      - user: |
+          are you a bot?
+        intent: bot_challenge
+      - action: utter_iamabot
+      - user: |
+          thanks
+        intent: thank_you
+      - action: utter_thank_you
+      - user: |
+          bye
+        intent: goodbye
+      - action: utter_goodbye

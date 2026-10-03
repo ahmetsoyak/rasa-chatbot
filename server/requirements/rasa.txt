@@ -1,0 +1,21 @@
+# Eco-Travel Advisor — core Rasa engine dependencies.
+# Verified working combination: Python 3.10.x + these exact pins.
+# Rasa Open Source 3.6.x requires Python >=3.8,<3.11 — NOT compatible with
+# Python 3.11+ or 3.13. Use a dedicated Python 3.10 virtualenv for this file.
+rasa[spacy]==3.6.21
+spacy==3.4.4
+rasa-sdk==3.6.2
+requests==2.34.2
+python-dotenv==1.2.3
+
+# The NLU pipeline (config.yml) needs the spaCy English model, which pip
+# can't install from PyPI. After installing this file run:
+#   pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.1/en_core_web_md-3.4.1-py3-none-any.whl
+# (`python -m spacy download en_core_web_md` also works.)
+
+# IMPORTANT: do not `pip install pytest`/`pytest-mock` etc. into this same
+# virtualenv. Newer pytest pulls in `packaging>=22`, which breaks rasa's
+# import of the legacy `packaging.version.LegacyVersion` API (rasa 3.6.x
+# requires `packaging<21.0`). Run the actions.py pytest suite in a SEPARATE
+# virtualenv using requirements-dev.txt + actions/requirements-actions.txt
+# (rasa-sdk alone has no such constraint). See tests/README.md.

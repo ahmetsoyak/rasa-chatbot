@@ -1,0 +1,830 @@
+version: "3.1"
+
+nlu:
+  - intent: greet
+    examples: |
+      - hey
+      - hello
+      - hi there
+      - good morning
+      - good evening
+      - hey bot
+      - hi, how are you
+      - hello there
+      - what's up
+      - yo
+      - greetings
+      - hiya
+      - hey eco advisor
+      - hi eco travel advisor
+      - hello, I need some help
+      - hey, can you help me
+      - good day
+      - hi, I'm new here
+      - hello, is anyone there
+      - hey there, how's it going
+      - morning!
+      - hi, nice to meet you
+      - hello assistant
+      - hey, just saying hi
+
+  - intent: goodbye
+    examples: |
+      - bye
+      - goodbye
+      - see you later
+      - see ya
+      - talk to you soon
+      - bye bye
+      - i have to go now
+      - that's all for now, bye
+      - catch you later
+      - farewell
+      - i'm done, goodbye
+      - thanks, bye
+      - gotta go, bye
+      - see you next time
+      - i'll come back later, bye
+      - that's everything, take care
+      - ok bye for now
+      - alright, signing off
+      - have to run, goodbye
+      - closing this chat now, bye
+
+  - intent: affirm
+    examples: |
+      - yes
+      - yeah
+      - sure
+      - of course
+      - that's right
+      - correct
+      - yes please
+      - absolutely
+      - sounds good
+      - yep
+      - definitely
+      - please do
+      - go ahead
+      - that works for me
+      - yes, that's correct
+      - yes go ahead and do that
+      - sure, sounds great
+      - yes exactly
+      - that's what I want
+      - perfect, yes
+      - okay do it
+      - yes let's proceed
+      - confirmed
+
+  - intent: deny
+    examples: |
+      - no
+      - nope
+      - not really
+      - no thanks
+      - not interested
+      - that's not right
+      - no, cancel that
+      - nah
+      - i don't want that
+      - not now
+      - no way
+      - negative
+      - no, that's wrong
+      - not at all
+      - no, don't do that
+      - I'd rather not
+      - no thank you
+      - stop, that's incorrect
+      - cancel please
+      - definitely not
+
+  - intent: bot_challenge
+    examples: |
+      - are you a bot?
+      - am I talking to a human or a bot?
+      - is this a real person?
+      - are you human?
+      - are you a real travel agent?
+      - am I chatting with an AI?
+      - are you a chatbot?
+      - is there a real person there?
+      - what are you, a robot?
+      - are you an ai assistant?
+      - are you a computer program?
+      - do I have a real person on the line right now?
+      - is this automated?
+      - are you artificial intelligence?
+      - am I speaking with software or a person?
+      - just curious, are you a bot or human?
+      - are you a machine?
+      - is there a human behind this chat?
+      - are you powered by AI?
+      - what kind of bot are you?
+
+  - intent: thank_you
+    examples: |
+      - thanks
+      - thank you
+      - thanks a lot
+      - appreciate it
+      - thank you so much
+      - that's helpful, thanks
+      - great, thanks!
+      - thanks for the help
+      - cheers
+      - much appreciated
+      - thanks for that info
+      - awesome, thank you
+      - this was really helpful, thanks
+      - thank you very much for your help
+      - great, appreciate the recommendations
+
+  - intent: request_trip_planning
+    examples: |
+      - I want to plan a trip
+      - can you help me plan a sustainable vacation?
+      - I'd like to plan an eco-friendly trip
+      - help me organize a green holiday
+      - I need to plan a trip somewhere
+      - let's plan a low-carbon vacation
+      - can we start planning my trip?
+      - I want to book an eco-conscious trip
+      - I'm looking to plan a sustainable journey
+      - help me plan my next vacation responsibly
+      - I want to travel sustainably
+      - can you help me arrange an eco trip?
+      - I'd like to organize a green travel itinerary
+      - plan me a trip that's good for the environment
+      - I want to go on an eco-friendly holiday
+      - let's get started planning a trip
+      - I need help putting together a sustainable itinerary
+      - can we begin planning my next holiday?
+      - I'd like some help booking a low-impact vacation
+      - help me build an eco-conscious travel plan
+      - I want to start planning a green getaway
+      - let's plan something environmentally friendly
+      - I need assistance planning an upcoming trip
+      - plan a trip to [Tokyo](destination)
+      - help me plan a low-carbon weekend in [Reykjavik](destination)
+      - I want to plan a city break to [Copenhagen](destination) in [next weekend](travel_date)
+      - can you plan an eco tour of [Monteverde](destination)?
+      - I need to plan a business trip to [Athens](destination)
+      - organise a carbon-neutral business trip to [Vik](destination) please
+      - let's plan a rural eco-tour around [Bled](destination)
+      - plan my holiday to [Kyoto](destination)
+      - I need to plan a work trip with low emissions
+      - help me plan a short city break
+      - I want a sustainable rural getaway
+      - plan a conference trip with the smallest footprint
+      - trip to [Paris](destination) [15 to 22 May](travel_date), can you help?
+      - start over and plan a new trip
+      - plan an eco holiday for my family
+      - plan a trip to [Lisbon](destination) from [Berlin](origin)
+      - help me plan a trip from [London](origin) to [Porto](destination)
+      - I want to plan a holiday in [Kyoto](destination), flying out of [Frankfurt](origin)
+      - plan a business trip from [Stockholm](origin) to [Hamburg](destination)
+      - I want to travel to [Berlin](destination) from [London](origin) from [2026-10-10 to 2026-10-14](travel_date)
+      - I want to travel from [London](origin) to [Berlin](destination) between [2026-10-10 and 2026-10-14](travel_date)
+      - plan my trip from [Paris](origin) to [Rome](destination) from [2026-11-02 to 2026-11-06](travel_date)
+      - help me travel from [Amsterdam](origin) to [Copenhagen](destination) on [2026-12-01 to 2026-12-07](travel_date)
+      - I would like to visit [Lisbon](destination) from [Berlin](origin) during [10 to 14 October](travel_date)
+      - arrange a sustainable trip from [Madrid](origin) to [Porto](destination) for [next weekend](travel_date)
+      - I am travelling from [Dublin](origin) to [Reykjavik](destination) from [15 to 20 May](travel_date)
+      - plan travel to [Vienna](destination) from [Munich](origin) for [the first week of July](travel_date)
+
+  - intent: inform_destination
+    examples: |
+      - I want to go to [Costa Rica](destination)
+      - my destination is [Kyoto](destination)
+      - I'm thinking of visiting [Iceland](destination)
+      - let's go to [Bali](destination)
+      - I'd like to travel to [Norway](destination)
+      - how about [New Zealand](destination)?
+      - I'm planning to visit [Portugal](destination)
+      - take me to [Slovenia](destination)
+      - [Costa Rica](destination) sounds nice
+      - I want to explore [Bhutan](destination)
+      - [Kyoto, Japan](destination) is my destination
+      - somewhere in [Scandinavia](destination)
+      - I was thinking [Iceland](destination) for the trip
+      - [Patagonia](destination) please
+      - destination is [Bali, Indonesia](destination)
+      - I'll go with [Norway](destination)
+      - we're headed to [Lisbon](destination)
+      - [Reykjavik](destination) is where I want to go
+      - the place I have in mind is [Ljubljana](destination)
+      - I'd love to see [Vietnam](destination)
+      - let's make it [Switzerland](destination)
+      - [San Jose, Costa Rica](destination) is the destination
+      - put down [Finland](destination) as my destination
+      - my pick for this trip is [Sweden](destination)
+      - [Amsterdam](destination)
+      - [Ljubljana](destination) please
+      - I'd like to go to [Edinburgh](destination)
+      - thinking about [Tokyo](destination)
+      - what about [Porto](destination)?
+      - let's do [Kyoto](destination)
+      - [Athens](destination) for a city break
+      - maybe [Osaka](destination)
+      - [Copenhagen](destination) this time
+      - I fancy [Dublin](destination)
+      - planning a trip to [Reykjavik](destination)
+      - we want to visit [Lisbon](destination)
+      - going to [Rome](destination)
+      - I'm heading to [Munich](destination)
+      - [Piran](destination) is the plan
+      - we chose [Barcelona](destination)
+      - [Lisbon](destination)
+      - [Kyoto](destination)
+      - [Porto](destination)
+      - [Bled](destination)
+      - [Monteverde](destination)
+      - [Reykjavik](destination)
+      - [Berlin](destination)
+      - [Hamburg](destination)
+      - [Paris](destination)
+      - [London](destination)
+      - [Vienna](destination)
+      - [Stockholm](destination)
+      - [Madrid](destination)
+      - [Prague](destination)
+      - [Zurich](destination)
+      - [Milan](destination)
+      - [Munich](destination) please
+      - [Copenhagen](destination) I think
+      - [San Jose](destination)
+      - [Vik](destination)
+      - I want to go to [Kyoto](destination) from [Hamburg](origin)
+      - to [Lisbon](destination) from [London](origin)
+      - [Porto](destination), leaving from [Madrid](origin)
+      - I'd like to visit [Vienna](destination), I'm coming from [Berlin](origin)
+      - from [Paris](origin) to [Bled](destination)
+      - we're going from [Amsterdam](origin) to [Copenhagen](destination)
+      - heading to [Reykjavik](destination) from [Dublin](origin)
+      - [Ljubljana](destination) from [Munich](origin)
+
+  - intent: inform_dates
+    examples: |
+      - [2026-10-01 to 2026-10-10](travel_date)
+      - I want to travel from [March 5 to March 15](travel_date)
+      - my travel dates are [next week](travel_date)
+      - we're going [June 1st through June 14th](travel_date)
+      - traveling on [the first week of July](travel_date)
+      - the dates for the trip would be [2026-11-12 to 2026-11-20](travel_date)
+      - I'm free to travel [any time in September](travel_date)
+      - let's say we leave [early December](travel_date)
+      - we'd fly out from [Jan 3 to Jan 10](travel_date)
+      - sometime [around Christmas](travel_date) works for travel
+      - [next month](travel_date) works for me to travel
+      - [2026-08-20](travel_date) is the day we leave
+      - we'd travel during [the second week of April](travel_date)
+      - [this summer](travel_date) is when we're going
+      - planning to depart [next Friday](travel_date)
+      - the trip dates are [October 12 to October 19](travel_date)
+      - I'd like to leave [in the spring](travel_date)
+      - we're available to travel [between the 5th and 15th of May](travel_date)
+      - departure would be [mid-November](travel_date)
+      - travel window is [the last two weeks of August](travel_date)
+      - [15 to 22 May](travel_date)
+      - we go [next weekend](travel_date)
+      - [the week after Easter](travel_date) works best
+      - dates: [early June](travel_date)
+      - probably [3rd to 10th of July](travel_date)
+      - travelling [late September](travel_date)
+      - it'll be [2026-12-01 to 2026-12-07](travel_date)
+      - we're thinking [this autumn](travel_date)
+      - the trip is [mid-March](travel_date)
+      - [the first two weeks of August](travel_date) if possible
+      - leaving [from 4 to 9 October](travel_date)
+      - sometime [over New Year](travel_date)
+      - [in two weeks](travel_date) for about a week
+      - I'm off [a long weekend in May](travel_date)
+      - [tomorrow](travel_date)
+      - [today](travel_date)
+      - leaving [tomorrow](travel_date)
+      - [this weekend](travel_date)
+      - [the day after tomorrow](travel_date)
+      - [next Monday](travel_date)
+      - I'm [flexible](travel_date)
+      - [any time](travel_date) really
+      - we fly or take the train [February half term](travel_date)
+      - [10 to 15 May](travel_date)
+      - [3 to 9 June](travel_date)
+      - [1 to 7 March](travel_date)
+      - [20 to 27 October](travel_date)
+      - from [12 to 18 April](travel_date)
+      - [5-12 August](travel_date)
+      - [May 10 to 15](travel_date)
+      - [next weekend](travel_date)
+
+  - intent: inform_budget
+    examples: |
+      - my budget is [$1500](budget)
+      - I have about [2000 dollars](budget) to spend
+      - I'm looking for something budget-friendly, around [$800](budget)
+      - I can spend up to [$3000](budget) on this trip
+      - I want something [cheap](budget) overall
+      - I'm looking for a [luxury](budget) trip, money's not an issue
+      - my spending limit is around [1000 euros](budget)
+      - my budget for this trip is [medium](budget)
+      - I want something [low-cost](budget) for this trip
+      - I have a [high](budget) budget for this vacation
+      - let's keep the total cost [affordable](budget)
+      - I can afford up to [$5000](budget) total for the trip
+      - I'd say [$1200](budget) is my spending limit
+      - I'm thinking [mid-range](budget) in terms of cost
+      - total trip budget is [£900](budget)
+      - I don't want to spend more than [$2500](budget)
+      - money-wise I have [around 1800 dollars](budget) set aside
+      - we're working with a budget of [3500 dollars](budget)
+      - keep costs [minimal](budget) please
+      - I can go as high as [$4000](budget) for everything
+      - [€1200](budget)
+      - about [1500 euros](budget)
+      - budget is [$900](budget)
+      - we have [£2,000](budget)
+      - [2k](budget) in total
+      - I can spend [around 700 pounds](budget)
+      - up to [3000 USD](budget)
+      - [a tight budget](budget) max
+      - roughly [a moderate budget](budget) for everything
+      - we're on [a generous budget](budget)
+      - I've got [under 1000 euros](budget)
+      - [roughly $1,800](budget) for the whole trip
+
+  - intent: inform_sustainability_preference
+    examples: |
+      - sustainability is [very important](sustainability_level) to me
+      - I want [high](sustainability_level) priority on eco-friendliness
+      - keep it [low](sustainability_level) priority, I mostly care about price
+      - [medium](sustainability_level) sustainability priority is fine
+      - I care a lot about the environment, make it [high](sustainability_level)
+      - eco-friendliness matters [a lot](sustainability_level) to me
+      - I don't mind either way, [low](sustainability_level) priority on eco stuff
+      - somewhere in between, [medium](sustainability_level) sustainability focus
+      - I want the [greenest](sustainability_level) options possible for my trip
+      - sustainability isn't a huge deal for me, [low](sustainability_level) priority
+      - make eco-friendliness a [top priority](sustainability_level) in your recommendations
+      - [high](sustainability_level) priority on being as green as possible
+      - just [somewhat](sustainability_level) important to me, sustainability-wise
+      - not a huge priority for sustainability, [low](sustainability_level)
+      - I want to minimize my environmental impact as much as possible, [high](sustainability_level)
+      - eco-friendliness is [not that important](sustainability_level) for this trip
+      - please prioritize the environment [above everything else](sustainability_level)
+      - a [balanced](sustainability_level) approach to sustainability is what I want
+      - price matters more to me
+      - I'd rather save money
+      - balance cost and emissions
+      - lowest emissions please
+      - as green as you can make it
+      - I care about both price and planet
+      - carbon doesn't matter much to me
+      - prioritise the planet
+      - I care more about price now
+      - price is more important now
+      - show me cheaper options instead
+      - actually make it [high](sustainability_level)
+      - switch to [balanced](sustainability_level)
+      - go for the [lowest carbon](sustainability_level) options
+
+  - intent: ask_carbon_footprint
+    examples: |
+      - what's the carbon footprint of [flying](travel_mode:flight) there?
+      - how much CO2 would this [flight](travel_mode:flight) produce?
+      - what is my carbon footprint for this trip?
+      - can you show me the emissions for this option?
+      - how eco-friendly is this route in terms of carbon?
+      - what's the carbon impact of taking a [train](travel_mode) instead?
+      - how much carbon will I emit on this trip?
+      - show me the carbon footprint breakdown
+      - what's the environmental impact of this [flight](travel_mode)?
+      - how green is this [bus](travel_mode) option in terms of emissions?
+      - can you calculate the CO2 emissions for my [car](travel_mode) trip?
+      - what's the estimated carbon footprint for this journey?
+      - how much pollution does this trip cause overall?
+      - tell me the emissions figure for each transport option
+      - what's the footprint of going by [ferry](travel_mode)?
+      - how much CO2 does a [bike](travel_mode) ride save compared to driving?
+      - what's the emissions estimate for an [electric car](travel_mode:electric_car)?
+      - can you tell me exactly how many kilograms of CO2 this trip produces?
+      - what's my total emissions number going to look like?
+      - give me the carbon score for this option
+      - how much CO2 is a [fly](travel_mode:flight) from [Madrid](origin) to [Munich](destination)?
+      - emissions for a [ferry](travel_mode) to [Milan](destination)
+      - compare [car](travel_mode) and [train](travel_mode) to [Paris](destination)
+      - what's the footprint of a [EV](travel_mode:electric_car) from [Milan](origin)?
+      - is the [bus](travel_mode) to [Vik](destination) bad for the climate?
+      - how many kg of CO2 for a [bus](travel_mode) to [Paris](destination)?
+      - carbon footprint of going to [Munich](destination) by [coach](travel_mode:bus)
+      - [car](travel_mode) or [train](travel_mode) to [Vienna](destination), which is greener?
+      - calculate emissions from [Paris](origin) to [Osaka](destination)
+      - how green is a [ferry](travel_mode) trip from [Manchester](origin) to [Bled](destination)?
+      - compare routes to [Munich](destination)
+      - what's the lowest-carbon way to get to [Dublin](destination)?
+      - show emissions for getting to [Paris](destination)
+      - how bad is [flying](travel_mode:flight) compared to the [train](travel_mode)?
+      - what's the CO2 difference between options?
+      - how much co2 is [flying](travel_mode:flight) there
+      - how much co2 if I [fly](travel_mode:flight) instead
+      - what if I [fly](travel_mode:flight)?
+      - is [flying](travel_mode:flight) to [Lisbon](destination) really that bad?
+      - emissions if I [drive](travel_mode:car)
+      - what about the [train](travel_mode)?
+      - and by [plane](travel_mode:flight)?
+      - footprint of [flying](travel_mode:flight) to [Kyoto](destination) from [Hamburg](origin)
+
+  - intent: ask_accommodation_options
+    examples: |
+      - what eco-friendly hotels are available?
+      - show me some green hotels
+      - can you recommend sustainable accommodations?
+      - what are my eco-certified hotel options?
+      - are there any green lodges nearby?
+      - I need a place to stay that's eco-certified
+      - what sustainable hotels do you recommend?
+      - show me eco hotels in the area
+      - any green accommodation options?
+      - I want to stay somewhere environmentally friendly
+      - what are the best eco lodges around?
+      - recommend an eco-conscious place to stay
+      - do you have any certified green hotels?
+      - what accommodation options are sustainable?
+      - where should I book a room that's eco-certified?
+      - can you suggest some environmentally friendly places to stay?
+      - what hotels have the best sustainability credentials?
+      - show me lodging options with green certifications
+      - where should I stay in [Kyoto](destination)?
+      - where should I stay in [San Jose](destination)?
+      - where should I stay in [Munich](destination)?
+      - find me a hostel near the station
+      - somewhere to stay close to public transport
+      - cheap but green places to stay
+      - hotels near a train station
+
+  - intent: ask_transport_options
+    examples: |
+      - what are my transport options for getting there?
+      - how can I get there?
+      - show me the ways to travel to my destination
+      - can I take a train instead of flying?
+      - what transport options do you recommend for this route?
+      - is there a bus or train available for this trip?
+      - what's better, train or bus for this journey?
+      - show me the ways to get to my destination
+      - are there electric transport options available for this route?
+      - recommend some transport choices for this route
+      - which mode of transport should I pick for this trip?
+      - what are my options for getting there besides flying?
+      - compare the transport modes available for this journey
+      - list the ways I could travel to get there
+      - what vehicles or transport modes can take me there?
+      - is there a ferry or train I could take instead of a flight?
+      - what's the schedule like for trains on this route?
+      - how do I book transport for this trip?
+      - public transport in [Paris](destination)
+      - public transport in [Hamburg](destination)
+      - public transport in [Prague](destination)
+      - is there a metro or tram there?
+      - can I get around without a car?
+      - how do I get around once I'm there?
+      - is there bike sharing?
+      - what day trips can I do by train?
+
+  - intent: ask_cultural_experiences
+    examples: |
+      - what local cultural experiences can I do?
+      - recommend some authentic local activities
+      - what can I do to experience the local culture?
+      - are there community-based tourism experiences?
+      - show me cultural activities near my destination
+      - what local experiences do you recommend?
+      - any traditional experiences I should try?
+      - I want to immerse myself in local culture
+      - what are some authentic things to do there?
+      - recommend local artisan or craft experiences
+      - what cultural tours are available?
+      - show me local food and culture experiences
+      - are there indigenous-led tours available?
+      - what's a good way to connect with local culture?
+      - suggest some community-led workshops or tours
+      - what activities support the local community there?
+      - are there any local craft or artisan workshops I could join?
+      - things to do in [Vik](destination)
+      - things to do in [Dublin](destination)
+      - things to do in [Kyoto](destination)
+      - what museums are there?
+      - any landmarks worth seeing?
+      - what should I see while I'm there?
+
+  - intent: ask_carbon_offset
+    examples: |
+      - can I offset my carbon emissions?
+      - what carbon offset programs do you recommend?
+      - how do I buy carbon credits for this trip?
+      - show me options to offset my flight emissions
+      - is there a way to neutralize my carbon footprint?
+      - what offset programs are available for this trip?
+      - how much does it cost to offset this trip's carbon?
+      - I want to purchase carbon offsets for my flight
+      - recommend a reputable carbon offset provider
+      - can you help me offset my travel emissions?
+      - what's the best way to offset this trip's footprint?
+      - are there tree-planting offset programs I can contribute to?
+      - how do carbon offsets work for flights specifically?
+      - where can I buy verified carbon credits?
+      - I'd like to compensate for the emissions from this journey
+
+  - intent: request_human_advisor
+    examples: |
+      - I want to talk to a real person
+      - can you connect me with a human advisor?
+      - this is too complicated, I need a human
+      - let me speak to a travel agent
+      - I need help from an actual human
+      - can I get a human to help me with this?
+      - please transfer me to a human advisor
+      - I'd rather speak with a person about this
+      - connect me with customer support please
+      - I need a real travel expert, not a bot, for this
+      - can a human help me plan this instead?
+      - escalate this to a human please
+      - I want to speak with an actual advisor now
+      - get me a human agent right away
+      - please put me through to a real advisor
+      - I'd like this handed off to a person on your team
+      - can someone from your team call me about this trip?
+      - I need to talk to a specialist, not the chatbot
+
+  - intent: out_of_scope
+    examples: |
+      - can you help me with my taxes?
+      - what's the capital of France?
+      - tell me a joke
+      - can you book a restaurant table for tonight?
+      - what's the stock market doing?
+      - help me fix my computer
+      - what movies are playing this weekend?
+      - can you order me a pizza?
+      - what's the meaning of life?
+      - play some music for me
+      - what's your favorite color?
+      - can you do my homework?
+      - what's the score of last night's game?
+      - can you write me a poem?
+      - help me debug this code
+      - what's trending on social media today?
+      - can you recommend a good recipe for dinner?
+      - what's the exchange rate for bitcoin?
+      - book me a dentist appointment
+      - who won the election?
+      - translate this sentence to German
+      - what's 17 times 23?
+      - set an alarm for 7am
+      - how do I bake sourdough?
+      - do I need a visa for Japan?
+      - what's the status of my flight BA123?
+      - my luggage was lost, who do I call?
+      - can you renew my passport?
+      - check me in for my flight
+      - what vaccinations do I need?
+      - is my train delayed right now?
+      - what's the duty-free allowance?
+      - remind me to call my mum
+      - send an email to my boss
+      - what time is it in New York?
+      - turn on the lights
+      - how many calories are in a banana?
+      - who is the president of the US?
+      - what's the best smartphone to buy?
+      - convert 5 miles to kilometres
+      - how do I reset my password?
+      - find me a plumber
+      - what's the news today?
+      - spell necessary
+      - do you like football?
+      - sing me a song
+      - what's your opinion on politics?
+      - are aliens real?
+      - how tall is Mount Everest?
+      - recommend a good book
+      - what should I watch on Netflix?
+      - I'm bored
+
+  - intent: inform_origin
+    examples: |
+      - I'm travelling from [Amsterdam](origin)
+      - I'll be leaving from [Paris](origin)
+      - I live in [Copenhagen](origin)
+      - starting from [Manchester](origin)
+      - my trip starts in [London](origin)
+      - I'm based in [Stockholm](origin)
+      - from [Munich](origin)
+      - departing from [Amsterdam](origin)
+      - I'm coming from [Stockholm](origin)
+      - we'll set off from [London](origin)
+      - I'm in [Stockholm](origin) right now
+      - home is [Stockholm](origin)
+      - origin is [Dublin](origin)
+      - I'm flying out of [London](origin)
+      - the journey starts in [Amsterdam](origin)
+      - we live near [London](origin)
+      - I'd start in [Copenhagen](origin)
+      - leaving [Frankfurt](origin) on the way there
+      - my home city is [Vienna](origin)
+      - we're coming over from [Manchester](origin)
+      - I'm travelling from [Lisbon](origin)
+      - I live in [Kyoto](origin)
+      - starting from [Porto](origin)
+      - we're based in [Hamburg](origin)
+      - leaving from [Berlin](origin)
+
+  - intent: share_location
+    examples: |
+      - use my location
+      - use my current location
+      - share my location
+      - here's my location
+      - you can use my GPS
+      - detect where I am
+      - find my location
+      - locate me
+      - use where I am now
+      - my location is fine to use
+      - take my position from the browser
+      - use GPS
+
+  - intent: ask_weather
+    examples: |
+      - what's the weather like in [Ljubljana](destination)?
+      - weather in [Athens](destination)
+      - will it rain in [Osaka](destination)?
+      - what's the forecast for [Paris](destination)?
+      - how warm is it in [Vienna](destination) right now?
+      - is it cold in [Athens](destination)?
+      - should I pack an umbrella for [Dublin](destination)?
+      - what will the weather be like?
+      - weather forecast please
+      - is it a good time for cycling there weather-wise?
+      - how hot does it get there this week?
+      - show me the forecast
+      - what's the temperature at my destination?
+      - will it be sunny in [Bled](destination)?
+      - weather check for [Osaka](destination)
+      - is it raining in [Paris](destination) today?
+      - what are conditions like in [Paris](destination) this week
+      - forecast for the next few days
+
+  - intent: ask_privacy
+    examples: |
+      - what do you do with my data?
+      - is my data stored?
+      - are you GDPR compliant?
+      - do you keep my location?
+      - who can see this conversation?
+      - how do you use my personal information?
+      - can you delete my data?
+      - privacy policy?
+      - do you share my details with anyone?
+      - will the advisor see my chat?
+      - is this conversation recorded?
+      - what happens to my GPS coordinates?
+      - do you track me?
+      - how long do you keep my information?
+      - I want my data removed
+
+  - synonym: low
+    examples: |
+      - not important
+      - don't care
+      - low priority
+      - not a priority
+      - cheap
+      - low-cost
+      - budget-friendly
+      - minimal
+      - not that important
+      - not a huge priority
+
+  - synonym: medium
+    examples: |
+      - somewhat important
+      - moderate
+      - mid-range
+      - in between
+      - balanced
+      - fairly important
+
+  - synonym: high
+    examples: |
+      - very important
+      - top priority
+      - a lot
+      - greenest
+      - as green as possible
+      - extremely important
+      - crucial
+      - above everything else
+      - minimize my environmental impact as much as possible
+
+  - synonym: flight
+    examples: |
+      - flying
+      - plane
+      - airplane
+      - fly
+
+  - synonym: bus
+    examples: |
+      - coach
+      - buses
+
+  - synonym: electric_car
+    examples: |
+      - electric car
+      - ev
+      - electric vehicle
+      - EV
+
+  - lookup: destination
+    examples: |
+      - Costa Rica
+      - Kyoto
+      - Iceland
+      - Bali
+      - Norway
+      - New Zealand
+      - Portugal
+      - Slovenia
+      - Bhutan
+      - Patagonia
+      - Scandinavia
+      - Switzerland
+      - Sweden
+      - Finland
+      - Vietnam
+      - Lisbon
+      - Reykjavik
+      - Ljubljana
+      - San Jose
+      - Amsterdam
+      - Athens
+      - Barcelona
+      - Berlin
+      - Bled
+      - Brussels
+      - Cologne
+      - Copenhagen
+      - Dublin
+      - Edinburgh
+      - Frankfurt
+      - Hamburg
+      - Istanbul
+      - London
+      - Madrid
+      - Manchester
+      - Milan
+      - Monteverde
+      - Munich
+      - New York
+      - Osaka
+      - Paris
+      - Piran
+      - Porto
+      - Prague
+      - Rome
+      - Stockholm
+      - Tokyo
+      - Vienna
+      - Vik
+      - Warsaw
+      - Zurich
+
+  - lookup: origin
+    examples: |
+      - Amsterdam
+      - Berlin
+      - Brussels
+      - Cologne
+      - Copenhagen
+      - Dublin
+      - Frankfurt
+      - Hamburg
+      - Istanbul
+      - London
+      - Madrid
+      - Manchester
+      - Milan
+      - Munich
+      - New York
+      - Paris
+      - Stockholm
+      - Vienna
+      - Warsaw
+      - Zurich
+
+  - regex: budget
+    examples: |
+      - [$€£]\s?\d[\d,\.]*k?
+      - \d[\d,\.]*\s?(euros?|dollars?|pounds?|EUR|USD|GBP)

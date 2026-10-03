@@ -1,0 +1,44 @@
+# Python / Rasa
+__pycache__/
+*.pyc
+.venv*/
+venv/
+.rasa/
+models/
+server/models/
+results/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data
+data/handover_log.jsonl
+server/rasa/data/handover_log.jsonl
+*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Scratch
+_to_delete/
+tmp/
+artifacts/
+
+# Assistant-generated working material (not part of the application)
+HANDOFF.md
+.agents/
+.codex/
+.ai/
+docs/ai/
+docs/screenshots/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

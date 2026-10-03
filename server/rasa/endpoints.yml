@@ -1,0 +1,24 @@
+# ============================================================================
+# Eco-Travel Advisor — endpoints.yml
+# ============================================================================
+
+action_endpoint:
+  url: "http://localhost:5055/webhook"
+  # If running the action server as a docker-compose service instead of
+  # locally, use the service name as the hostname, e.g.:
+  # url: "http://action_server:5055/webhook"
+
+# Tracker store, lock store, and event broker all default to in-memory /
+# local file storage, which is fine for this MSc assignment. Uncomment and
+# configure below if persistence across restarts (e.g. Redis, SQL) is
+# required:
+#
+# tracker_store:
+#   type: SQL
+#   dialect: "sqlite"
+#   db: "tracker.db"
+#
+# lock_store:
+#   type: redis
+#   url: "localhost"
+#   port: 6379

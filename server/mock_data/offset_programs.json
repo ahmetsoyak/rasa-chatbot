@@ -1,0 +1,33 @@
+{
+  "_comment": "Offset guidance shown by action_carbon_offset_info. Lists real certification STANDARDS and their public registries rather than specific projects or prices, because project availability and prices change and the bot cannot verify them. The price range is a broad indicative range only and is presented as such.",
+  "principles": [
+    "Reduce first: choosing rail over a short-haul flight cuts far more CO2e than offsetting the flight.",
+    "Offsets do not cancel emissions in the atmosphere at the time of travel; treat them as a contribution, not a licence to fly.",
+    "Prefer credits that are independently verified, retired in a public registry in your name, and that show additionality and permanence."
+  ],
+  "standards": [
+    {
+      "name": "Gold Standard",
+      "type": "Certification standard",
+      "registry_url": "https://registry.goldstandard.org/",
+      "notes": "Founded by WWF and other NGOs; requires projects to show sustainable-development co-benefits."
+    },
+    {
+      "name": "Verra Verified Carbon Standard (VCS)",
+      "type": "Certification standard",
+      "registry_url": "https://registry.verra.org/",
+      "notes": "Largest voluntary standard by volume; check the project type and vintage, as quality varies."
+    },
+    {
+      "name": "Climate Action Reserve",
+      "type": "Certification standard",
+      "registry_url": "https://www.climateactionreserve.org/",
+      "notes": "North American offset registry with publicly listed protocols."
+    }
+  ],
+  "indicative_price_per_tonne_eur": {
+    "low": 5,
+    "high": 30,
+    "_note": "Broad indicative range for voluntary credits; removal credits can cost far more. Always check the provider's actual price."
+  }
+}

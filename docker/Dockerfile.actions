@@ -1,0 +1,13 @@
+FROM python:3.10-slim
+
+WORKDIR /app/server
+
+COPY server/requirements/actions.txt ./requirements/actions.txt
+RUN pip install --no-cache-dir -r requirements/actions.txt
+
+COPY server/actions/ ./actions/
+COPY server/mock_data/ ./mock_data/
+
+EXPOSE 5055
+
+CMD ["python", "-m", "rasa_sdk", "--actions", "actions", "--port", "5055"]

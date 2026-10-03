@@ -1,0 +1,228 @@
+# ============================================================================
+# Eco-Travel Advisor — domain.yml
+# ============================================================================
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - bot_challenge
+  - thank_you
+  - request_trip_planning
+  - inform_destination
+  - inform_dates
+  - inform_budget
+  - inform_sustainability_preference
+  - ask_carbon_footprint
+  - ask_accommodation_options
+  - ask_transport_options
+  - ask_cultural_experiences
+  - ask_carbon_offset
+  - request_human_advisor
+  - inform_origin
+  - share_location
+  - ask_weather
+  - ask_privacy
+  - out_of_scope
+  - nlu_fallback
+
+entities:
+  - destination
+  - travel_date
+  - budget
+  - sustainability_level
+  - travel_mode
+  - origin
+  - latitude
+  - longitude
+  - distance_km
+
+slots:
+  destination:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: destination
+      - type: from_text
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: destination
+        not_intent: &questions [ask_carbon_footprint, ask_carbon_offset, ask_weather, ask_privacy,
+                                bot_challenge, request_human_advisor, ask_accommodation_options,
+                                ask_transport_options, ask_cultural_experiences, inform_origin,
+                                share_location, out_of_scope, greet, goodbye, thank_you]
+
+  travel_dates:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: travel_date
+      - type: from_text
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: travel_dates
+        not_intent: *questions
+
+  budget:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: budget
+      - type: from_text
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: budget
+        not_intent: *questions
+
+  sustainability_level:
+    type: categorical
+    values:
+      - low
+      - medium
+      - high
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: sustainability_level
+      - type: from_text
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: sustainability_level
+        not_intent: *questions
+
+  origin:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: origin
+
+  origin_lat:
+    type: float
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: latitude
+
+  origin_lon:
+    type: float
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: longitude
+
+  budget_tier:
+    type: categorical
+    values: [low, medium, high]
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  user_currency:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  last_results:
+    type: any
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  carbon_score:
+    type: float
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  handover_requested:
+    type: bool
+    initial_value: false
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  clarification_attempts:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+forms:
+  trip_planning_form:
+    required_slots:
+      - destination
+      - travel_dates
+      - budget
+      - sustainability_level
+
+responses:
+  utter_greet:
+    - text: "Hi! I'm your Eco-Travel Advisor. I can help you plan a low-carbon trip — where are you thinking of going?"
+    - text: "Hello! Ready to plan a sustainable trip together? Tell me a destination to get started."
+
+  utter_goodbye:
+    - text: "Safe and sustainable travels! Goodbye."
+    - text: "Bye for now — have a green trip!"
+
+  utter_iamabot:
+    - text: "I'm an AI-powered Eco-Travel Advisor, built with Rasa, here to help you plan sustainable trips."
+
+  utter_thank_you:
+    - text: "You're very welcome! Anything else I can help you plan?"
+
+  utter_ask_travel_dates:
+    - text: "What dates are you planning to travel? (e.g. '2026-10-01 to 2026-10-10')"
+
+  utter_ask_budget:
+    - text: "What's your approximate budget for this trip? (e.g. '$1500' or 'medium budget')"
+
+  utter_trip_summary:
+    - text: "Got it: {destination}, {travel_dates}, budget {budget}, {sustainability_level} sustainability priority. Let me find some eco-friendly options for you."
+
+  utter_privacy:
+    - text: "I only use what you tell me (destination, dates, budget, preferences and, if you allow it, your location) to answer during this chat. GPS coordinates are never written to the advisor log. If you're handed to a human advisor, they see your trip details and this conversation so you don't have to repeat yourself. You can ask for that record to be deleted at any time (GDPR Art. 17)."
+
+  utter_out_of_scope:
+    - text: "I'm focused on sustainable travel planning, so I can't help with that — but I'd love to help you plan an eco-friendly trip!"
+
+  utter_handover_notice:
+    - text: "This looks like it needs a human touch. I'll prepare a handover package with a summary of our conversation so far."
+
+  utter_ask_rephrase:
+    - text: "Could you rephrase that, or pick one of the options below?"
+      buttons:
+        - title: "Plan a trip"
+          payload: "/request_trip_planning"
+        - title: "Check carbon footprint"
+          payload: "/ask_carbon_footprint"
+        - title: "Talk to a human advisor"
+          payload: "/request_human_advisor"
+
+actions:
+  - action_set_destination
+  - action_update_sustainability_level
+  - action_ask_destination
+  - action_ask_sustainability_level
+  - validate_trip_planning_form
+  - action_set_location
+  - action_get_weather
+  - action_carbon_offset_info
+  - action_search_accommodations
+  - action_search_transport
+  - action_calculate_carbon_footprint
+  - action_search_cultural_experiences
+  - action_rank_recommendations
+  - action_human_handover
+  - action_default_fallback
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

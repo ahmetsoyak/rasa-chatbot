@@ -1,0 +1,6 @@
+# Eco-Travel Advisor — custom action server dependencies.
+# Installed into the actions Docker image (see ../Dockerfile.actions) and,
+# for local dev, alongside requirements-dev.txt in a test virtualenv.
+rasa-sdk==3.6.2
+requests==2.34.2
+python-dotenv==1.2.3

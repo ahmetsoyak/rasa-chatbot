@@ -1,0 +1,47 @@
+services:
+  action_server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.actions
+    container_name: eco-travel-actions
+    env_file:
+      - .env
+    ports:
+      - "5055:5055"
+    networks:
+      - eco-travel-net
+    restart: unless-stopped
+
+  rasa:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.rasa
+    container_name: eco-travel-rasa
+    env_file:
+      - .env
+    depends_on:
+      - action_server
+    ports:
+      - "5005:5005"
+    networks:
+      - eco-travel-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_RASA_URL: http://localhost:5005
+    container_name: eco-travel-frontend
+    depends_on:
+      - rasa
+    ports:
+      - "3000:3000"
+    networks:
+      - eco-travel-net
+    restart: unless-stopped
+
+networks:
+  eco-travel-net:
+    driver: bridge

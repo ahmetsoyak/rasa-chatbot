@@ -1,0 +1,208 @@
+version: "3.1"
+
+# Multi-turn flows the rules alone can't express. The three named scenarios
+# from the brief (city break, rural eco-tour, carbon-neutral business trip)
+# each have a story so TEDPolicy learns the branching around them.
+
+stories:
+  - story: city break, form filled in one go, then offset
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - intent: ask_carbon_offset
+      - action: action_carbon_offset_info
+      - intent: thank_you
+      - action: utter_thank_you
+
+  - story: rural eco-tour, one slot per turn, high sustainability
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - intent: inform_destination
+        entities:
+          - destination: "Monteverde"
+      - action: trip_planning_form
+      - intent: inform_dates
+        entities:
+          - travel_date: "next spring"
+      - action: trip_planning_form
+      - intent: inform_budget
+        entities:
+          - budget: "2000"
+      - action: trip_planning_form
+      - intent: inform_sustainability_preference
+        entities:
+          - sustainability_level: "high"
+      - action: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - intent: ask_cultural_experiences
+      - action: action_search_cultural_experiences
+
+  - story: business trip, origin first, then compare and offset
+    steps:
+      - intent: inform_origin
+        entities:
+          - origin: "Berlin"
+      - action: action_set_location
+      - intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - intent: ask_carbon_footprint
+        entities:
+          - travel_mode: "flight"
+      - action: action_calculate_carbon_footprint
+      - intent: ask_carbon_offset
+      - action: action_carbon_offset_info
+
+  - story: destination named first starts the form
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: inform_destination
+        entities:
+          - destination: "Lisbon"
+      - action: action_set_destination
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+
+  - story: GPS location then carbon comparison
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: share_location
+        entities:
+          - latitude: 52.52
+          - longitude: 13.405
+      - action: action_set_location
+      - intent: ask_carbon_footprint
+      - action: action_calculate_carbon_footprint
+      - intent: thank_you
+      - action: utter_thank_you
+
+  - story: change preference after recommendations
+    steps:
+      - intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - intent: inform_sustainability_preference
+        entities:
+          - sustainability_level: "high"
+      - action: action_update_sustainability_level
+      - action: action_search_accommodations
+      - action: action_rank_recommendations
+      - intent: ask_weather
+      - action: action_get_weather
+
+  - story: direct accommodation question
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: ask_accommodation_options
+      - action: action_search_accommodations
+      - intent: goodbye
+      - action: utter_goodbye
+
+  - story: transport and cultural questions in sequence
+    steps:
+      - intent: ask_transport_options
+      - action: action_search_transport
+      - intent: ask_cultural_experiences
+      - action: action_search_cultural_experiences
+      - intent: ask_weather
+      - action: action_get_weather
+
+  - story: human handover after recommendations
+    steps:
+      - intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+      - intent: request_human_advisor
+      - action: utter_handover_notice
+      - action: action_human_handover
+
+  - story: out of scope then plan
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: out_of_scope
+      - action: utter_out_of_scope
+      - intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+
+  - story: privacy question then plan
+    steps:
+      - intent: ask_privacy
+      - action: utter_privacy
+      - intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations
+
+  - story: fallback then recovery
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: nlu_fallback
+      - action: action_default_fallback
+      - intent: request_trip_planning
+      - action: trip_planning_form
+      - active_loop: trip_planning_form
+      - active_loop: null
+      - action: utter_trip_summary
+      - action: action_search_accommodations
+      - action: action_calculate_carbon_footprint
+      - action: action_search_transport
+      - action: action_rank_recommendations

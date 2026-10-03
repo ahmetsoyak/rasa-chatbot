@@ -1,0 +1,91 @@
+{
+  "_comment": "Fallback emission factors used when the Climatiq API is unconfigured or unreachable. Values are kg CO2e per passenger-km (cars: per vehicle-km, i.e. one occupant), copied unrounded from the UK Government GHG Conversion Factors 2026 (flat format, revised; sheet 'Factors by Category'). The live path asks Climatiq for the SAME rows (BEIS, GB, 2026, see 'climatiq.selector'), so both paths give the same number. Verified 1 October 2026: every Climatiq result matched this table exactly. The bot rounds output to 2 significant figures.",
+  "_source": "Department for Energy Security and Net Zero (2026) Greenhouse gas reporting: conversion factors 2026 (flat format, revised). London: DESNZ. Available at: https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2026",
+  "_factor_rows": {
+    "train": "25_315_3147_11_1 Business travel- land > Rail > National rail",
+    "bus": "25_314_3146_11_1 Business travel- land > Bus > Coach",
+    "electric_car": "25_301_3076_4_1 Business travel- land > Cars (by size) > Average car > Battery Electric Vehicle (per vehicle-km)",
+    "car": "25_301_3070_4_1 Business travel- land > Cars (by size) > Average car > Petrol (per vehicle-km, one occupant)",
+    "ferry": "23_318_3190_11_1 Business travel- sea > Ferry > Average (all passenger)",
+    "flight_short": "21_316_3164_11_1 Business travel- air > Flights > Short-haul, to/from UK > Economy class > With RF",
+    "flight_long": "21_316_3170_11_1 Business travel- air > Flights > Long-haul, to/from UK > Economy class > With RF",
+    "_note": "Both flight rows are economy class with RF. DESNZ: 'All the factors include the distance uplift of 8%', so the bot sends great-circle distance for flights (no extra uplift). The 2024 values were 0.18287 / 0.20011; DESNZ revised aviation factors down from 2025. 'International, to/from non-UK' has no short/long split, so the to/from-UK rows are used to keep the 3,700 km split."
+  },
+  "factors_kg_co2e_per_km": {
+    "walk": 0.0,
+    "bike": 0.0,
+    "train": 0.03092,
+    "bus": 0.03948,
+    "electric_car": 0.02951,
+    "car": 0.16152,
+    "ferry": 0.1127,
+    "flight_short": 0.12576,
+    "flight_long": 0.11704
+  },
+  "_short_haul_comment": "DESNZ and the Climatiq activity IDs below both split short- and long-haul flights at 3,700 km.",
+  "short_haul_max_km": 3700,
+  "mode_labels": {
+    "walk": "Walking",
+    "bike": "Cycling",
+    "train": "Train",
+    "bus": "Coach / bus",
+    "electric_car": "Electric car",
+    "car": "Petrol car (1 occupant)",
+    "ferry": "Ferry",
+    "flight_short": "Short-haul flight",
+    "flight_long": "Long-haul flight",
+    "flight": "Flight"
+  },
+  "intensity_bands_g_per_pkm": {
+    "_comment": "Absolute floor, by INTENSITY (g CO2e per passenger-km) so a long train trip is not penalised for being long: green <= 60, amber <= 149, red >= 150. When several modes are compared for the same trip, a relative band is also computed against the lowest-carbon motorised option (see relative_bands) and the WORSE of the two is shown. Reason: with DESNZ 2026 factors flights are 117-126 g/pkm, so the absolute band alone would show them amber.",
+    "green_max": 60,
+    "amber_max": 149
+  },
+  "accommodation_bands_kg_per_night": {
+    "green_max": 10.0,
+    "amber_max": 20.0
+  },
+  "accommodation_kg_per_night_by_type": {
+    "_comment": "Indicative per-room-night footprints by accommodation type, used only for OpenStreetMap results that carry no footprint data. Rough midpoints informed by the Cornell Hotel Sustainability Benchmarking Index; shown to the user as estimates.",
+    "hostel": 6.0,
+    "guest_house": 8.0,
+    "apartment": 9.0,
+    "hotel_1_2_star": 12.0,
+    "hotel_3_star": 16.0,
+    "hotel_4_5_star": 25.0,
+    "hotel_unknown": 16.0
+  },
+  "climatiq": {
+    "_comment": "Checked live on 1 October 2026 (data version 37). Without a source/year filter Climatiq picks factors from other datasets (e.g. a Dutch well-to-wheel ferry factor of 1.42 kg/pkm), so every request is pinned to the DESNZ/BEIS 2026 combustion rows that the local table copies.",
+    "data_version": "^37",
+    "selector": {
+      "source": "BEIS",
+      "region": "GB",
+      "year": 2026,
+      "source_lca_activity": "fuel_combustion"
+    },
+    "selector_overrides": {
+      "electric_car": {
+        "source_lca_activity": "electricity_generation-transmission_and_distribution"
+      }
+    },
+    "per_vehicle_modes": [
+      "car",
+      "electric_car"
+    ],
+    "activity_ids": {
+      "train": "passenger_train-route_type_national_rail-fuel_source_na",
+      "bus": "passenger_vehicle-vehicle_type_coach-fuel_source_na-distance_na-engine_size_na",
+      "car": "passenger_vehicle-vehicle_type_business_travel_car-fuel_source_petrol-engine_size_na-vehicle_age_na-vehicle_weight_na",
+      "electric_car": "passenger_vehicle-vehicle_type_business_travel_car-fuel_source_bev-engine_size_na-vehicle_age_na-vehicle_weight_na",
+      "ferry": "passenger_ferry-route_type_na-fuel_source_na",
+      "flight_short": "passenger_flight-route_type_international-aircraft_type_na-distance_short_haul_lt_3700km-class_economy-rf_included-distance_uplift_included",
+      "flight_long": "passenger_flight-route_type_international-aircraft_type_na-distance_long_haul_gt_3700km-class_economy-rf_included-distance_uplift_included"
+    }
+  },
+  "relative_bands_ratio_to_best": {
+    "_comment": "Trip total divided by the lowest-carbon motorised option for the same trip (walking/cycling excluded).",
+    "green_max": 1.5,
+    "amber_max": 3.0
+  }
+}
