@@ -3,18 +3,23 @@
 .env
 .env.*
 !.env.example
-__pycache__
-*.pyc
+**/__pycache__
+**/*.pyc
 .venv
 .venv*
 venv
 _to_delete
 results
-models
-.rasa
+tmp
+# Local training artefacts: the image trains its own model. A macOS training
+# cache restored on Linux produces a model that classifies everything as fallback.
+**/models
+**/.rasa
+# Runtime data that may contain personal details.
+server/rasa/data/handover_log.jsonl
 frontend/node_modules
 frontend/dist
 docs
 tests
-*.log
-.DS_Store
+**/*.log
+**/.DS_Store
