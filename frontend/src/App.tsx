@@ -95,7 +95,7 @@ function App() {
       <main className="flex min-h-0 flex-1 flex-col">
         <div className="relative min-h-0 flex-1 overflow-y-auto">
           <div
-            className="mx-auto flex max-w-2xl flex-col gap-4 p-4"
+            className="mx-auto flex max-w-4xl flex-col gap-4 p-4"
             role="log"
             aria-live="polite"
             aria-relevant="additions"
@@ -111,7 +111,7 @@ function App() {
               />
             ))}
           </div>
-          <div className="mx-auto max-w-2xl px-4 pb-4">
+          <div className="mx-auto max-w-4xl px-4 pb-4">
             <p role="status" aria-live="polite" className="text-xs text-muted-foreground">
               {isSending ? "Eco-Travel Advisor is typing…" : ""}
             </p>
@@ -122,7 +122,7 @@ function App() {
 
       <footer className="border-t p-3">
         <form
-          className="mx-auto flex max-w-2xl items-center gap-2"
+          className="mx-auto flex max-w-4xl items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
@@ -173,7 +173,7 @@ function App() {
             <Send className="size-4" aria-hidden="true" />
           </Button>
         </form>
-        <p id={hintId} className="mx-auto mt-1 max-w-2xl text-[11px] text-muted-foreground" aria-live="polite">
+        <p id={hintId} className="mx-auto mt-1 max-w-4xl text-[11px] text-muted-foreground" aria-live="polite">
           {speech.error ??
             "Your location is only used for this chat. Ask \"what do you do with my data?\" for details."}
         </p>

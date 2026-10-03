@@ -156,7 +156,7 @@ export function DatePicker({ onSubmit, disabled }: DatePickerProps) {
         <form
           ref={panelRef}
           id={`${ids}-panel`}
-          className="flex w-full max-w-md flex-col gap-3 rounded-lg border bg-card p-3"
+          className="flex w-full max-w-xl flex-col gap-3 rounded-lg border bg-card p-3"
           onSubmit={(e) => {
             e.preventDefault();
             if (range && !problem) submit(range);

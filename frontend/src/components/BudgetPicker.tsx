@@ -65,7 +65,7 @@ export function BudgetPicker({ onSubmit, disabled }: BudgetPickerProps) {
       </div>
 
       <form
-        className="flex w-full max-w-md flex-col gap-2 rounded-lg border bg-card p-3"
+        className="flex w-full max-w-xl flex-col gap-2 rounded-lg border bg-card p-3"
         onSubmit={(e) => {
           e.preventDefault();
           if (valid) onSubmit(`${amount} ${currency}`, `${formatMoney(amount, currency)} in total`);

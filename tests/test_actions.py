@@ -536,6 +536,30 @@ class TestTripPlanningForm:
         tracker = make_tracker(latest_message=entities(destination="Kyoto"))
         assert A.ActionSetDestination().run(dispatcher, tracker, {}) == []
 
+    LONG_ROUTE = ("hi eco-lovely machine :D I want to go Milan from Berlin. Just so you know, I can not "
+                  "walk or bike from here to Milan. Please give me your suggestions.")
+
+    @pytest.mark.parametrize("found", [
+        [("origin", "Milan"), ("origin", "Berlin")],                       # both tagged as origin
+        [("destination", "Berlin"), ("destination", "Milan")],             # both tagged as destination
+    ])
+    def test_set_destination_uses_from_wording_over_entity_roles(self, dispatcher, found):
+        message = {"text": "I want to go Milan from Berlin", "intent": {},
+                   "entities": [{"entity": k, "value": v} for k, v in found]}
+        events = slot_events(A.ActionSetDestination().run(dispatcher, make_tracker(latest_message=message), {}))
+        assert events["destination"] == "Milan" and events["origin"] == "Berlin"
+        assert events["origin_lat"] is not None
+
+    def test_form_drops_the_starting_point_and_repeats_from_destinations(self, dispatcher):
+        tracker = make_tracker(latest_message={"text": self.LONG_ROUTE, "intent": {}, "entities": []})
+        out = self.validator.validate_destination(["Milan", "Berlin", "Milan"], dispatcher, tracker, {})
+        assert out["destination"] == "Milan" and out["origin"] == "Berlin"
+        assert texts(dispatcher) == []  # no multi-stop warning
+
+    def test_from_here_is_not_a_place(self, dispatcher):
+        tracker = make_tracker(latest_message={"text": "I want to go to Milan from here", "intent": {}, "entities": []})
+        assert slot_events(A.ActionSetDestination().run(dispatcher, tracker, {})) == {"destination": "Milan"}
+
     def test_set_destination_geocodes_bare_text(self, dispatcher):
         tracker = make_tracker(slots={"destination": "Hamburg"},
                                latest_message={"text": "porto", "intent": {}, "entities": []})

@@ -6,7 +6,7 @@ export function OffsetInfo({ payload }: { payload: OffsetInfoPayload }) {
   const standards = asArray(payload.standards);
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-xl">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <ShieldCheck className="size-4" aria-hidden="true" />

@@ -8,7 +8,7 @@ export function ExperienceList({ payload }: { payload: ExperienceListPayload }) 
   if (items.length === 0) return null;
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-xl">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Landmark className="size-4" aria-hidden="true" />

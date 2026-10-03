@@ -26,7 +26,7 @@ export function CarbonScoreCard({ payload }: { payload: CarbonScoreCardPayload }
   const options = asArray(payload.options);
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-2">
+    <div className="flex w-full max-w-xl flex-col gap-2">
       <Card className={`border ${meta.surface}`}>
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">

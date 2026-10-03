@@ -165,6 +165,16 @@ def _said_this_turn(tracker: Tracker, text: Text) -> bool:
     return False
 
 
+# A place phrase ends at a following preposition or punctuation, so
+# "go Milan from Berlin." yields "Milan" and "from Berlin." yields "Berlin".
+_PLACE = r"([^\W\d_][\w'.\- ]*?)"
+_PLACE_END = r"(?=\s+(?:to|from|on|in|for|by|via|next|this|between|during|and)\b|[.,!?;:]|$)"
+_DESTINATION_RE = re.compile(
+    rf"\b(?:go|going|travel|head|fly|drive|visit)(?:\s+to)?\s+{_PLACE}{_PLACE_END}"
+    rf"|\bdestination\s+is\s+{_PLACE}{_PLACE_END}", re.I)
+_ORIGIN_RE = re.compile(rf"\bfrom\s+{_PLACE}{_PLACE_END}", re.I)
+
+
 def _destination_phrase(text: Text) -> Text:
     """Extract a likely place phrase from an otherwise natural sentence.
 
@@ -175,10 +185,34 @@ def _destination_phrase(text: Text) -> Text:
     without treating arbitrary hotel-request words as cities.
     """
     cleaned = text.strip().rstrip("?.!")
-    match = re.search(r"\b(?:go|travel|head|fly|drive)(?:\s+to)?\s+(.+)$|\bvisit\s+(.+)$|\bdestination\s+is\s+(.+)$", cleaned, re.I)
+    match = _DESTINATION_RE.search(cleaned)
     if match:
         return next(part.strip() for part in match.groups() if part)
     return cleaned
+
+
+def _typed_origin(text: Text) -> Optional[Dict[str, Any]]:
+    """The place after "from" in the user's message ("go Milan from Berlin").
+
+    The NLU model sometimes tags both cities in such a sentence with the same
+    role, so the wording decides which one is the starting point. Phrases
+    that are not places ("from here") are skipped.
+    """
+    for match in _ORIGIN_RE.finditer(text or ""):
+        phrase = match.group(1).strip()
+        place = geo.geocode(phrase) if 0 < len(phrase) <= 40 else None
+        if place:
+            return place
+    return None
+
+
+def _origin_events(place: Dict[str, Any]) -> Dict[Text, Any]:
+    """Slot values for a typed starting point (replaces any GPS position)."""
+    return {"origin": place["name"], "origin_lat": place.get("lat"), "origin_lon": place.get("lon")}
+
+
+def _same_place(name: Any, place: Optional[Dict[str, Any]]) -> bool:
+    return bool(place) and str(name).strip().lower() == place["name"].lower()
 
 
 def _user_currency(tracker: Tracker) -> Text:
@@ -299,21 +333,27 @@ class ActionSetDestination(Action):
         return "action_set_destination"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[EventType]:
-        extracted = _entity(tracker, "destination")
-        raw = extracted or _destination_phrase(_message_text(tracker))
+        text = _message_text(tracker)
+        origin = _typed_origin(text)
+        origin_events = [SlotSet(k, v) for k, v in _origin_events(origin).items()] if origin else []
+        # "go Milan from Berlin": an entity naming the starting point is never the destination.
+        extracted = next((e.get("value") for e in (tracker.latest_message or {}).get("entities", []) or []
+                          if e.get("entity") == "destination" and not _same_place(e.get("value"), origin)), None)
+        raw = extracted or _destination_phrase(text)
         raw = str(raw).strip()
         place = geo.geocode(raw) if 0 < len(raw) <= 40 else None
         if place:
-            if extracted and raw.lower() == place["name"].lower():
+            if (extracted and not origin and raw.lower() == place["name"].lower()
+                    and tracker.get_slot("destination") in (None, extracted)):
                 # Rasa has already set this valid entity through the slot
                 # mapping; avoid creating a redundant slot event.
                 return []
             if raw.lower() != place["name"].lower():
                 dispatcher.utter_message(text=f"I'll use {place['name']} for '{raw}'.")
-            return [SlotSet("destination", place["name"])]
+            return [SlotSet("destination", place["name"])] + origin_events
         if raw:
             dispatcher.utter_message(text=f"I couldn't match '{raw}' to a place.")
-        return [SlotSet("destination", None)]
+        return [SlotSet("destination", None)] + origin_events
 
 
 class ActionUpdateSustainabilityLevel(Action):
@@ -415,7 +455,17 @@ class ValidateTripPlanningForm(FormValidationAction):
     def validate_destination(self, slot_value: Any, dispatcher: CollectingDispatcher,
                              tracker: Tracker, domain: DomainDict) -> Dict[Text, Any]:
         values = slot_value if isinstance(slot_value, list) else [slot_value]
-        values = [v for v in values if v]
+        # Drop the city named after "from" and repeats ("go Milan from Berlin
+        # ... to Milan" can come back as Milan, Berlin, Milan).
+        origin = _typed_origin(_message_text(tracker))
+        unique: List[Any] = []
+        for v in values:
+            if v and not _same_place(v, origin) and str(v).lower() not in [str(u).lower() for u in unique]:
+                unique.append(v)
+        values = unique
+        if not values and origin:
+            phrase = _destination_phrase(_message_text(tracker))
+            values = [phrase] if phrase and not _same_place(phrase, origin) else []
         if not values:
             return {"destination": None}
         if len(values) >= 3:
@@ -436,10 +486,13 @@ class ValidateTripPlanningForm(FormValidationAction):
         if place.get("source") == "gazetteer_fuzzy" and not _said_this_turn(tracker, correction):
             dispatcher.utter_message(text=correction)
         out: Dict[Text, Any] = {"destination": place["name"]}
+        if origin and not _same_place(place["name"], origin):
+            out.update(_origin_events(origin))
+            return out
         # A bare city name typed as the answer can be tagged as `origin` by the
         # NLU model; the same city can't be both, so drop the origin.
-        origin = tracker.get_slot("origin")
-        if origin and str(origin).lower() in (str(values[0]).lower(), place["name"].lower()):
+        current = tracker.get_slot("origin")
+        if current and str(current).lower() in (str(values[0]).lower(), place["name"].lower()):
             out.update({"origin": None, "origin_lat": None, "origin_lon": None})
         return out
 

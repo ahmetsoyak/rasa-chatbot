@@ -7,8 +7,15 @@ const labels: Record<string, string> = {
   origin: "Starting point",
   travel_dates: "Travel dates",
   budget: "Budget",
+  budget_tier: "Budget level",
   sustainability_level: "Sustainability priority",
+  carbon_score: "Trip carbon (kg CO2e per person)",
 };
+
+function formatValue(key: string, value: unknown): string {
+  if (key === "carbon_score" && typeof value === "number") return value.toLocaleString("en-GB", { maximumFractionDigits: 0 });
+  return String(value);
+}
 
 export function HandoverCard({ payload }: { payload: HandoverNoticePayload }) {
   const trip = payload.context?.trip ?? {};
@@ -33,7 +40,7 @@ export function HandoverCard({ payload }: { payload: HandoverNoticePayload }) {
                 {details.map(([key, value]) => (
                   <div key={key} className="contents">
                     <dt className="text-muted-foreground">{labels[key] ?? key}</dt>
-                    <dd>{String(value)}</dd>
+                    <dd>{formatValue(key, value)}</dd>
                   </div>
                 ))}
               </dl>

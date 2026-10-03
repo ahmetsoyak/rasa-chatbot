@@ -64,7 +64,7 @@ function HotelCard({ hotel, position, total }: { hotel: EcoHotel; position: numb
           <span className="font-medium">{price}</span>
           {hotel.price_is_estimate && (
             <span className="block text-xs text-muted-foreground">
-              Estimate for a {hotel.type ?? "place"} of this kind{hotel.price_band ? ` (${hotel.price_band})` : ""}
+              Estimate for {/^[aeiou]/i.test(hotel.type ?? "") ? "an" : "a"} {hotel.type ?? "place"} of this kind{hotel.price_band ? ` (${hotel.price_band})` : ""}
             </span>
           )}
         </p>
@@ -107,11 +107,11 @@ export function HotelCarousel({ payload }: { payload: HotelCarouselPayload }) {
   if (hotels.length === 0) return null;
 
   return (
-    <div role="group" className="w-full max-w-md space-y-2" aria-label={`Advisor: places to stay${payload.destination ? ` in ${payload.destination}` : ""}`}>
+    <div role="group" className="w-full max-w-3xl space-y-2" aria-label={`Advisor: places to stay${payload.destination ? ` in ${payload.destination}` : ""}`}>
       <Carousel opts={{ align: "start" }} className="w-full">
         <CarouselContent>
           {hotels.map((hotel, i) => (
-            <CarouselItem key={hotel.name ?? i} className="basis-4/5 sm:basis-3/5">
+            <CarouselItem key={hotel.name ?? i} className="basis-4/5 sm:basis-1/2 lg:basis-1/3">
               <HotelCard hotel={hotel} position={i + 1} total={hotels.length} />
             </CarouselItem>
           ))}

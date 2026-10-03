@@ -12,7 +12,7 @@ export function WeatherCard({ payload }: { payload: WeatherCardPayload }) {
   const days = asArray(payload.days);
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-xl">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <CloudSun className="size-4" aria-hidden="true" />

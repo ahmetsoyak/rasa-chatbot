@@ -3,13 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BandBadge } from "@/components/BandBadge";
 import { asArray, fmt, type TransportOptionsPayload } from "@/lib/payloads";
 
-const KIND_LABELS: Record<string, string> = {
-  rail: "rail stations",
-  metro: "metro stops",
-  tram: "tram stops",
-  bus: "bus stops",
-  ferry: "ferry piers",
-  bike_share: "bike-share docks",
+const KIND_LABELS: Record<string, [string, string]> = {
+  rail: ["rail station", "rail stations"],
+  metro: ["metro stop", "metro stops"],
+  tram: ["tram stop", "tram stops"],
+  bus: ["bus stop", "bus stops"],
+  ferry: ["ferry pier", "ferry piers"],
+  bike_share: ["bike-share dock", "bike-share docks"],
 };
 
 export function TransportOptions({ payload }: { payload: TransportOptionsPayload }) {
@@ -17,7 +17,7 @@ export function TransportOptions({ payload }: { payload: TransportOptionsPayload
   const routes = asArray(payload.routes);
   if (counts.length === 0 && routes.length === 0) {
     return (
-      <p className="max-w-md text-sm text-muted-foreground">
+      <p className="max-w-xl text-sm text-muted-foreground">
         {payload.unavailable
           ? `I couldn't get live local transit data for ${payload.destination ?? "this destination"} right now.`
           : `I don't have public-transport data for ${payload.destination ?? "this destination"} yet.`}
@@ -26,7 +26,7 @@ export function TransportOptions({ payload }: { payload: TransportOptionsPayload
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-xl">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Bus className="size-4" aria-hidden="true" />
@@ -42,7 +42,7 @@ export function TransportOptions({ payload }: { payload: TransportOptionsPayload
             <ul className="flex flex-wrap gap-1.5">
               {counts.map(([kind, n]) => (
                 <li key={kind} className="rounded-md bg-muted px-2 py-0.5 text-xs">
-                  {n} {KIND_LABELS[kind] ?? kind.replace(/_/g, " ")}
+                  {n} {KIND_LABELS[kind]?.[n === 1 ? 0 : 1] ?? kind.replace(/_/g, " ")}
                 </li>
               ))}
             </ul>
