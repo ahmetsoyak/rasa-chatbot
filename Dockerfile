@@ -32,4 +32,4 @@ RUN useradd --create-home --uid 1000 appuser \
 
 USER appuser
 EXPOSE 7860
-CMD ["sh", "-c", "sed \"s/listen 7860;/listen ${PORT:-7860};/\" /etc/nginx/nginx.conf > /tmp/nginx.conf && exec /usr/bin/supervisord -c /etc/supervisor/conf.d/eco-travel.conf"]
+CMD ["sh", "-c", "echo \"nginx: serving the app on port ${PORT:-7860}\" && sed \"s/listen 7860;/listen ${PORT:-7860};/\" /etc/nginx/nginx.conf > /tmp/nginx.conf && exec /usr/bin/supervisord -c /etc/supervisor/conf.d/eco-travel.conf"]
